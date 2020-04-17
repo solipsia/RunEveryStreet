@@ -24,5 +24,12 @@
 	</style>
 </head>
 <body>
+	<div id="demoMap" style="height:250px"></div>
+<script src="OpenLayers.js"></script>
+<script>
+    map = new OpenLayers.Map("demoMap");
+    map.addLayer(new OpenLayers.Layer.OSM());
+    map.zoomToMaxExtent();
+</script>
 </body>
 </html>
