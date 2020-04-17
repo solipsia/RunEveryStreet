@@ -1,0 +1,22 @@
+(
+way({{bbox}})
+['name']
+['highway']
+['highway' !~ 'steps']
+['highway' !~ 'motorway']
+['highway' !~ 'motorway_link']
+['highway' !~ 'raceway']
+['highway' !~ 'proposed']
+['highway' !~ 'construction']
+['highway' !~ 'elevator']
+['highway' !~ 'bus_guideway']
+['highway' !~ 'cycleway']
+['highway' !~ 'trunk']
+['highway' !~ 'platform']
+['service' !~ 'drive-through']
+['service' !~ 'parking_aisle']
+['access' !~ 'private']
+['access' !~ 'no'];
+node(w)({{bbox}});
+);
+out;
