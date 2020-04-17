@@ -10,15 +10,18 @@
 	<script src="libraries/p5.js"></script>
 	<script src="libraries/p5.dom.js"></script>
 	<script src="libraries/p5.sound.js"></script>
-	<script src="sketch.js"></script>
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.3.1/css/ol.css" type="text/css">
+	<script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.3.1/build/ol.js"></script>
+
+
+
     <style>
       .map {
         height: 768px;
-        width: 100%;
+        width: 1024px;
       }
     </style>
-    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.3.1/build/ol.js"></script>
+    
 	<style>
 		body {
 			margin:0;
@@ -32,19 +35,6 @@
 </head>
 <body>
 	<div id="map" class="map"></div>
-	<script type="text/javascript">
-		var map = new ol.Map({
-		  target: 'map',
-		  layers: [
-			new ol.layer.Tile({
-			  source: new ol.source.OSM()
-			})
-		  ],
-		  view: new ol.View({
-			center: ol.proj.fromLonLat([0.3192, 51.6297]),
-			zoom: 17
-		  })
-		});
-	  </script>
+	<script src="sketch.js"></script>
 </body>
 </html>
