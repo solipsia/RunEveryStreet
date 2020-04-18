@@ -12,30 +12,30 @@ var openlayersmap = new ol.Map({
 });
 
 
-var mapWidth = 1024;
 var mapHeight = 768;
-var windowX = mapWidth;
-var windowY = mapHeight + 50;
+var windowX, windowY = mapHeight + 50;
 let txtoverpassQuery;
 var OSMxml;
-var numnodes;
-var numways;
+var numnodes, numways;
 var nodes;
-var minlat = 9999;
-var maxlat = -9999;
-var minlon = 9999;
-var maxlon = -9999;
-var nodes = [];
-var edges = [];
-var mapminlat;
-var mapminlon;
-var mapmaxlat;
-var mapmaxlon;
+var minlat = Infinity,
+	maxlat = -Infinity,
+	minlon = Infinity,
+	maxlon = -Infinity;
+var nodes = [],
+	edges = [];
+var mapminlat, mapminlon, mapmaxlat, mapmaxlon;
 var totaledgedistance = 0;
 var closestnodetomouse = -1;
+var startnode, currentnode;
+var selectnodemode = true,
+	solvemode = false;
+var remainingedges;
 
 function preload() {
+	//UpperShenfield
 	let OverpassURL = "https://overpass-api.de/api/interpreter?data=%0A%28%0Away%2851.62870041465817%2C0.3206205368041992%2C51.63770381417218%2C0.3356838226318359%29%0A%5B%27name%27%5D%0A%5B%27highway%27%5D%0A%5B%27highway%27%20%21~%20%27path%27%5D%0A%5B%27highway%27%20%21~%20%27steps%27%5D%0A%5B%27highway%27%20%21~%20%27motorway%27%5D%0A%5B%27highway%27%20%21~%20%27motorway_link%27%5D%0A%5B%27highway%27%20%21~%20%27raceway%27%5D%0A%5B%27highway%27%20%21~%20%27bridleway%27%5D%0A%5B%27highway%27%20%21~%20%27proposed%27%5D%0A%5B%27highway%27%20%21~%20%27construction%27%5D%0A%5B%27highway%27%20%21~%20%27elevator%27%5D%0A%5B%27highway%27%20%21~%20%27bus_guideway%27%5D%0A%5B%27highway%27%20%21~%20%27footway%27%5D%0A%5B%27highway%27%20%21~%20%27cycleway%27%5D%0A%5B%27highway%27%20%21~%20%27trunk%27%5D%0A%5B%27highway%27%20%21~%20%27platform%27%5D%0A%5B%27foot%27%20%21~%20%27no%27%5D%0A%5B%27service%27%20%21~%20%27drive-through%27%5D%0A%5B%27service%27%20%21~%20%27parking_aisle%27%5D%0A%5B%27access%27%20%21~%20%27private%27%5D%0A%5B%27access%27%20%21~%20%27no%27%5D%3B%0Anode%28w%29%2851.62870041465817%2C0.3206205368041992%2C51.63770381417218%2C0.3356838226318359%29%3B%0A%29%3B%0Aout%3B";
+
 	httpGet(OverpassURL, 'text', false, function (response) {
 		let OverpassResponse = response;
 		var parser = new DOMParser();
@@ -74,29 +74,50 @@ function preload() {
 				}
 			}
 		}
-
+		remainingedges = edges.length;
 	});
 }
 
 function setup() {
 	//createCanvas(windowWidth, windowHeight);
+	windowX = windowWidth;
+	mapWidth = windowWidth;
 	let canvas = createCanvas(windowX, windowY);
 	canvas.position(0, 0);
 	colorMode(HSB);
-	button = createButton('submit');
+	button = createButton('Solve');
 	button.position(10, mapHeight + 5);
-	//button.mousePressed(parseOverpassXML);
+	button.mousePressed(solve);
 	txtoverpassData = createInput();
 	txtoverpassData.position(10, mapHeight + 30);
 }
 
 function draw() {
 	clear();
-	for (let i = 0; i < edges.length; i++) {
-		edges[i].show();
+	showEdges();
+	showNodes();
 
+	if (solvemode == true) {
+		shuffle(currentnode.edges, true);
+		currentnode.edges.sort((a, b) => a.travels - b.travels);
+		let edgewithleasttravels = currentnode.edges[0];
+		let nextNode = edgewithleasttravels.OtherNodeofEdge(currentnode);
+		edgewithleasttravels.travels++;
+		//currentroute.addWaypoint(nextNode, edgewithleasttravels.distance);
+		currentnode = nextNode;
+		if (edgewithleasttravels.travels == 1) { // then first time traveled on this edge
+			remainingedges--; //fewer edges that have not been travelled
+		}
+		if (remainingedges == 0) {
+			solvemode = false;
+		}
 	}
-	
+
+
+
+}
+
+function showNodes() {
 	let closestnodetomousedist = Infinity;
 	let disttoMouse = 0;
 	for (let i = 0; i < nodes.length; i++) {
@@ -107,13 +128,39 @@ function draw() {
 			closestnodetomouse = i;
 		}
 	}
-	if (closestnodetomouse > 0) {
-		nodes[closestnodetomouse].highlight();
-		fill(255,0,0);
-		noStroke();
-		text("Starting node: "+nodes[closestnodetomouse].nodeId,200,windowY-10)
-	}
 
+	if (selectnodemode) {
+		if (closestnodetomouse > 0) {
+			nodes[closestnodetomouse].highlight();
+			fill(255, 0, 0);
+			noStroke();
+			text("Selecting node: " + nodes[closestnodetomouse].nodeId, 200, windowY - 10)
+		}
+	} else {
+		nodes[startnodeindex].highlight();
+		fill(255, 0, 0);
+		noStroke();
+		text("Starting node: " + nodes[startnodeindex].nodeId, 200, windowY - 10)
+	}
+}
+
+function showEdges() {
+	for (let i = 0; i < edges.length; i++) {
+		edges[i].show();
+	}
+}
+
+function solve() {
+	solvemode = true;
+	startnodeindex = closestnodetomouse;
+	currentnode = nodes[startnodeindex];
+	console.log(currentnode);
+	selectnodemode = false;
+}
+
+function mouseClicked() {
+	startnodeindex = closestnodetomouse;
+	selectnodemode = false;
 }
 
 function positionMap() {
@@ -153,6 +200,7 @@ class Node {
 		this.pos = createVector(1, 1);
 		this.x = map(this.lon, mapminlon, mapmaxlon, 0, mapWidth);
 		this.y = map(this.lat, mapminlat, mapmaxlat, mapHeight, 0);
+		this.edges = [];
 	}
 
 	show() {
@@ -165,7 +213,7 @@ class Node {
 	highlight() {
 		noStroke();
 		colorMode(HSB);
-		fill(0, 255, 255, 100);
+		fill(0, 255, 255, 0.5);
 		ellipse(this.x, this.y, 15);
 	}
 }
@@ -176,6 +224,12 @@ class Edge {
 		this.to = to_;
 		this.travels = 0;
 		this.distance = calcdistance(this.from.lat, this.from.lon, this.to.lat, this.to.lon);
+		if (!this.from.edges.includes(this)) {
+			this.from.edges.push(this);
+		}
+		if (!this.to.edges.includes(this)) {
+			this.to.edges.push(this);
+		}
 	}
 
 	show() {
@@ -183,8 +237,16 @@ class Edge {
 		if (this.travels > 0) {
 			stroke(80, 255, 255, 38);
 		} else {
-			stroke(255, 255, 255, 255);
+			stroke(255, 255, 255, 0.5);
 		}
 		line(this.from.x, this.from.y, this.to.x, this.to.y);
+	}
+
+	OtherNodeofEdge(node) {
+		if (node == this.from) {
+			return this.to;
+		} else {
+			return this.from;
+		}
 	}
 }
