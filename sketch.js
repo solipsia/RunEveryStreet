@@ -36,63 +36,11 @@ var remainingedges;
 var startnodeindex = -1;
 var debugsteps = 0;
 
-function preload() {
-	//UpperShenfield
-	//let OverpassURL = "https://overpass-api.de/api/interpreter?data=%0A%28%0Away%2851.62870041465817%2C0.3206205368041992%2C51.63770381417218%2C0.3356838226318359%29%0A%5B%27name%27%5D%0A%5B%27highway%27%5D%0A%5B%27highway%27%20%21~%20%27path%27%5D%0A%5B%27highway%27%20%21~%20%27steps%27%5D%0A%5B%27highway%27%20%21~%20%27motorway%27%5D%0A%5B%27highway%27%20%21~%20%27motorway_link%27%5D%0A%5B%27highway%27%20%21~%20%27raceway%27%5D%0A%5B%27highway%27%20%21~%20%27bridleway%27%5D%0A%5B%27highway%27%20%21~%20%27proposed%27%5D%0A%5B%27highway%27%20%21~%20%27construction%27%5D%0A%5B%27highway%27%20%21~%20%27elevator%27%5D%0A%5B%27highway%27%20%21~%20%27bus_guideway%27%5D%0A%5B%27highway%27%20%21~%20%27footway%27%5D%0A%5B%27highway%27%20%21~%20%27cycleway%27%5D%0A%5B%27highway%27%20%21~%20%27trunk%27%5D%0A%5B%27highway%27%20%21~%20%27platform%27%5D%0A%5B%27foot%27%20%21~%20%27no%27%5D%0A%5B%27service%27%20%21~%20%27drive-through%27%5D%0A%5B%27service%27%20%21~%20%27parking_aisle%27%5D%0A%5B%27access%27%20%21~%20%27private%27%5D%0A%5B%27access%27%20%21~%20%27no%27%5D%3B%0Anode%28w%29%2851.62870041465817%2C0.3206205368041992%2C51.63770381417218%2C0.3356838226318359%29%3B%0A%29%3B%0Aout%3B";
-	//let OverpassURL = "https://overpass-api.de/api/interpreter?data=%0A%28%0Away%2851.614126037727054%2C0.3124237060546875%2C51.64524078892412%2C0.3632354736328125%29%0A%5B%27name%27%5D%0A%5B%27highway%27%5D%0A%5B%27highway%27%20%21~%20%27path%27%5D%0A%5B%27highway%27%20%21~%20%27steps%27%5D%0A%5B%27highway%27%20%21~%20%27motorway%27%5D%0A%5B%27highway%27%20%21~%20%27motorway_link%27%5D%0A%5B%27highway%27%20%21~%20%27raceway%27%5D%0A%5B%27highway%27%20%21~%20%27bridleway%27%5D%0A%5B%27highway%27%20%21~%20%27proposed%27%5D%0A%5B%27highway%27%20%21~%20%27construction%27%5D%0A%5B%27highway%27%20%21~%20%27elevator%27%5D%0A%5B%27highway%27%20%21~%20%27bus_guideway%27%5D%0A%5B%27highway%27%20%21~%20%27footway%27%5D%0A%5B%27highway%27%20%21~%20%27cycleway%27%5D%0A%5B%27highway%27%20%21~%20%27trunk%27%5D%0A%5B%27highway%27%20%21~%20%27platform%27%5D%0A%5B%27foot%27%20%21~%20%27no%27%5D%0A%5B%27service%27%20%21~%20%27drive-through%27%5D%0A%5B%27service%27%20%21~%20%27parking_aisle%27%5D%0A%5B%27access%27%20%21~%20%27private%27%5D%0A%5B%27access%27%20%21~%20%27no%27%5D%3B%0Anode%28w%29%2851.614126037727054%2C0.3124237060546875%2C51.64524078892412%2C0.3632354736328125%29%3B%0A%29%3B%0Aout%3B";
-	//loadOverpassData(OverpassURL);
-}
-
-function loadOverpassData(OverpassURL) {
-	httpGet(OverpassURL, 'text', false, function (response) {
-		let OverpassResponse = response;
-		var parser = new DOMParser();
-		OSMxml = parser.parseFromString(OverpassResponse, "text/xml");
-		var XMLnodes = OSMxml.getElementsByTagName("node")
-		var XMLways = OSMxml.getElementsByTagName("way")
-		numnodes = XMLnodes.length;
-		numways = XMLways.length;
-		for (let i = 0; i < numnodes; i++) {
-			var lat = XMLnodes[i].getAttribute('lat');
-			var lon = XMLnodes[i].getAttribute('lon');
-			minlat = min(minlat, lat);
-			maxlat = max(maxlat, lat);
-			minlon = min(minlon, lon);
-			maxlon = max(maxlon, lon);
-		}
-		positionMap(minlon, minlat, maxlon, maxlat);
-		for (let i = 0; i < numnodes; i++) {
-			var lat = XMLnodes[i].getAttribute('lat');
-			var lon = XMLnodes[i].getAttribute('lon');
-			var nodeid = XMLnodes[i].getAttribute('id');
-			let node = new Node(nodeid, lat, lon);
-			nodes.push(node);
-		}
-		//parse ways into edges
-		for (let i = 0; i < numways; i++) {
-			let wayid = XMLways[i].getAttribute('id');
-			let nodesinsideway = XMLways[i].getElementsByTagName('nd');
-			for (let j = 0; j < nodesinsideway.length - 1; j++) {
-				fromnode = getNodebyId(nodesinsideway[j].getAttribute("ref"));
-				tonode = getNodebyId(nodesinsideway[j + 1].getAttribute("ref"));
-				if (fromnode != null & tonode != null) {
-					let newEdge = new Edge(fromnode, tonode);
-					edges.push(newEdge);
-					totaledgedistance += newEdge.distance;
-				}
-			}
-		}
-
-	});
-}
-
 function setup() {
-	//createCanvas(windowWidth, windowHeight);
 	windowX = windowWidth;
 	mapWidth = windowWidth;
 	canvas = createCanvas(windowX, windowY);
 	frameRate(1000);
-	//canvas.position(0, 0);
 	colorMode(HSB);
 	solvebutton = createButton('Solve');
 	solvebutton.position(10, mapHeight + 5);
@@ -103,8 +51,6 @@ function setup() {
 	removeorphansbutton = createButton('Get data');
 	removeorphansbutton.position(350, mapHeight + 5);
 	removeorphansbutton.mousePressed(getOverpassData);
-	txtoverpassData = createInput();
-	txtoverpassData.position(10, mapHeight + 30);
 	choosemapmode = true;
 }
 
@@ -148,15 +94,51 @@ function getOverpassData() {
 	//UpperShenfield
 	//let payload = "%0A%28%0Away%2851.62870041465817%2C0.3206205368041992%2C51.63770381417218%2C0.3356838226318359%29%0A%5B%27name%27%5D%0A%5B%27highway%27%5D%0A%5B%27highway%27%20%21~%20%27path%27%5D%0A%5B%27highway%27%20%21~%20%27steps%27%5D%0A%5B%27highway%27%20%21~%20%27motorway%27%5D%0A%5B%27highway%27%20%21~%20%27motorway_link%27%5D%0A%5B%27highway%27%20%21~%20%27raceway%27%5D%0A%5B%27highway%27%20%21~%20%27bridleway%27%5D%0A%5B%27highway%27%20%21~%20%27proposed%27%5D%0A%5B%27highway%27%20%21~%20%27construction%27%5D%0A%5B%27highway%27%20%21~%20%27elevator%27%5D%0A%5B%27highway%27%20%21~%20%27bus_guideway%27%5D%0A%5B%27highway%27%20%21~%20%27footway%27%5D%0A%5B%27highway%27%20%21~%20%27cycleway%27%5D%0A%5B%27highway%27%20%21~%20%27trunk%27%5D%0A%5B%27highway%27%20%21~%20%27platform%27%5D%0A%5B%27foot%27%20%21~%20%27no%27%5D%0A%5B%27service%27%20%21~%20%27drive-through%27%5D%0A%5B%27service%27%20%21~%20%27parking_aisle%27%5D%0A%5B%27access%27%20%21~%20%27private%27%5D%0A%5B%27access%27%20%21~%20%27no%27%5D%3B%0Anode%28w%29%2851.62870041465817%2C0.3206205368041992%2C51.63770381417218%2C0.3356838226318359%29%3B%0A%29%3B%0Aout%3B";
 	let overpassquery = "(way({{bbox}})['name']['highway']['highway' !~ 'path']['highway' !~ 'steps']['highway' !~ 'motorway']['highway' !~ 'motorway_link']['highway' !~ 'raceway']['highway' !~ 'bridleway']['highway' !~ 'proposed']['highway' !~ 'construction']['highway' !~ 'elevator']['highway' !~ 'bus_guideway']['highway' !~ 'footway']['highway' !~ 'cycleway']['highway' !~ 'trunk']['highway' !~ 'platform']['foot' !~ 'no']['service' !~ 'drive-through']['service' !~ 'parking_aisle']['access' !~ 'private']['access' !~ 'no'];node(w)({{bbox}}););out;";
-	overpassquery=overpassquery.replace("{{bbox}}",mapminlat+","+ mapminlon+","+ mapmaxlat+","+ mapmaxlon);//      51.614126037727054%2C0.3124237060546875%2C51.64524078892412%2C0.3632354736328125)
-	overpassquery=overpassquery.replace("{{bbox}}",mapminlat+","+ mapminlon+","+ mapmaxlat+","+ mapmaxlon);//      51.614126037727054%2C0.3124237060546875%2C51.64524078892412%2C0.3632354736328125)
-	
-	let payload = encodeURI(overpassquery);
+	overpassquery = overpassquery.replace("{{bbox}}", mapminlat + "," + mapminlon + "," + mapmaxlat + "," + mapmaxlon);
+	overpassquery = overpassquery.replace("{{bbox}}", mapminlat + "," + mapminlon + "," + mapmaxlat + "," + mapmaxlon);
+	OverpassURL = OverpassURL + encodeURI(overpassquery);
+	httpGet(OverpassURL, 'text', false, function (response) {
+		let OverpassResponse = response;
+		var parser = new DOMParser();
+		OSMxml = parser.parseFromString(OverpassResponse, "text/xml");
+		var XMLnodes = OSMxml.getElementsByTagName("node")
+		var XMLways = OSMxml.getElementsByTagName("way")
+		numnodes = XMLnodes.length;
+		numways = XMLways.length;
+		for (let i = 0; i < numnodes; i++) {
+			var lat = XMLnodes[i].getAttribute('lat');
+			var lon = XMLnodes[i].getAttribute('lon');
+			minlat = min(minlat, lat);
+			maxlat = max(maxlat, lat);
+			minlon = min(minlon, lon);
+			maxlon = max(maxlon, lon);
+		}
+		positionMap(minlon, minlat, maxlon, maxlat);
+		nodes = [];
+		edges = [];
+		for (let i = 0; i < numnodes; i++) {
+			var lat = XMLnodes[i].getAttribute('lat');
+			var lon = XMLnodes[i].getAttribute('lon');
+			var nodeid = XMLnodes[i].getAttribute('id');
+			let node = new Node(nodeid, lat, lon);
+			nodes.push(node);
+		}
+		//parse ways into edges
+		for (let i = 0; i < numways; i++) {
+			let wayid = XMLways[i].getAttribute('id');
+			let nodesinsideway = XMLways[i].getElementsByTagName('nd');
+			for (let j = 0; j < nodesinsideway.length - 1; j++) {
+				fromnode = getNodebyId(nodesinsideway[j].getAttribute("ref"));
+				tonode = getNodebyId(nodesinsideway[j + 1].getAttribute("ref"));
+				if (fromnode != null & tonode != null) {
+					let newEdge = new Edge(fromnode, tonode);
+					edges.push(newEdge);
+					totaledgedistance += newEdge.distance;
+				}
+			}
+		}
 
-	console.log(payload);
-	console.log(decodeURI(payload));
-	
-	loadOverpassData(OverpassURL+payload);
+	});
 }
 
 function showNodes() {
@@ -170,7 +152,6 @@ function showNodes() {
 			closestnodetomouse = i;
 		}
 	}
-
 	if (selectnodemode) {
 		startnodeindex = closestnodetomouse;
 	}
@@ -180,8 +161,6 @@ function showNodes() {
 		noStroke();
 		text("Starting node: " + nodes[startnodeindex].nodeId, 200, windowY - 10)
 	}
-
-
 }
 
 function showEdges() {
@@ -205,9 +184,16 @@ function removeOrphans() { // remove unreachable nodes and edges
 	for (let i = 0; i < edges.length; i++) {
 		if (edges[i].travels > 0) {
 			newedges.push(edges[i]);
+			if (!newnodes.includes(edges[i].from)) {
+				newnodes.push(edges[i].from);
+			}
+			if (!newnodes.includes(edges[i].to)) {
+				newnodes.push(edges[i].to);
+			}
 		}
 	}
 	edges = newedges;
+	nodes = newnodes;
 	resetEdges();
 }
 
