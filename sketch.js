@@ -2,7 +2,7 @@ var openlayersmap = new ol.Map({
 	target: 'map',
 	layers: [
 		new ol.layer.Tile({
-			source: new ol.source.OSM()
+			source: new ol.source.OSM(), opacity:0.5
 		})
 	],
 	view: new ol.View({
@@ -31,11 +31,13 @@ var startnode, currentnode;
 var selectnodemode = true,
 	solvemode = false;
 var remainingedges;
+var startnodeindex = -1;
+var debugsteps = 0;
 
 function preload() {
 	//UpperShenfield
-	let OverpassURL = "https://overpass-api.de/api/interpreter?data=%0A%28%0Away%2851.62870041465817%2C0.3206205368041992%2C51.63770381417218%2C0.3356838226318359%29%0A%5B%27name%27%5D%0A%5B%27highway%27%5D%0A%5B%27highway%27%20%21~%20%27path%27%5D%0A%5B%27highway%27%20%21~%20%27steps%27%5D%0A%5B%27highway%27%20%21~%20%27motorway%27%5D%0A%5B%27highway%27%20%21~%20%27motorway_link%27%5D%0A%5B%27highway%27%20%21~%20%27raceway%27%5D%0A%5B%27highway%27%20%21~%20%27bridleway%27%5D%0A%5B%27highway%27%20%21~%20%27proposed%27%5D%0A%5B%27highway%27%20%21~%20%27construction%27%5D%0A%5B%27highway%27%20%21~%20%27elevator%27%5D%0A%5B%27highway%27%20%21~%20%27bus_guideway%27%5D%0A%5B%27highway%27%20%21~%20%27footway%27%5D%0A%5B%27highway%27%20%21~%20%27cycleway%27%5D%0A%5B%27highway%27%20%21~%20%27trunk%27%5D%0A%5B%27highway%27%20%21~%20%27platform%27%5D%0A%5B%27foot%27%20%21~%20%27no%27%5D%0A%5B%27service%27%20%21~%20%27drive-through%27%5D%0A%5B%27service%27%20%21~%20%27parking_aisle%27%5D%0A%5B%27access%27%20%21~%20%27private%27%5D%0A%5B%27access%27%20%21~%20%27no%27%5D%3B%0Anode%28w%29%2851.62870041465817%2C0.3206205368041992%2C51.63770381417218%2C0.3356838226318359%29%3B%0A%29%3B%0Aout%3B";
-
+	//let OverpassURL = "https://overpass-api.de/api/interpreter?data=%0A%28%0Away%2851.62870041465817%2C0.3206205368041992%2C51.63770381417218%2C0.3356838226318359%29%0A%5B%27name%27%5D%0A%5B%27highway%27%5D%0A%5B%27highway%27%20%21~%20%27path%27%5D%0A%5B%27highway%27%20%21~%20%27steps%27%5D%0A%5B%27highway%27%20%21~%20%27motorway%27%5D%0A%5B%27highway%27%20%21~%20%27motorway_link%27%5D%0A%5B%27highway%27%20%21~%20%27raceway%27%5D%0A%5B%27highway%27%20%21~%20%27bridleway%27%5D%0A%5B%27highway%27%20%21~%20%27proposed%27%5D%0A%5B%27highway%27%20%21~%20%27construction%27%5D%0A%5B%27highway%27%20%21~%20%27elevator%27%5D%0A%5B%27highway%27%20%21~%20%27bus_guideway%27%5D%0A%5B%27highway%27%20%21~%20%27footway%27%5D%0A%5B%27highway%27%20%21~%20%27cycleway%27%5D%0A%5B%27highway%27%20%21~%20%27trunk%27%5D%0A%5B%27highway%27%20%21~%20%27platform%27%5D%0A%5B%27foot%27%20%21~%20%27no%27%5D%0A%5B%27service%27%20%21~%20%27drive-through%27%5D%0A%5B%27service%27%20%21~%20%27parking_aisle%27%5D%0A%5B%27access%27%20%21~%20%27private%27%5D%0A%5B%27access%27%20%21~%20%27no%27%5D%3B%0Anode%28w%29%2851.62870041465817%2C0.3206205368041992%2C51.63770381417218%2C0.3356838226318359%29%3B%0A%29%3B%0Aout%3B";
+	let OverpassURL = "http://overpass-api.de/api/interpreter?data=%0A%28%0Away%2851.614126037727054%2C0.3124237060546875%2C51.64524078892412%2C0.3632354736328125%29%0A%5B%27name%27%5D%0A%5B%27highway%27%5D%0A%5B%27highway%27%20%21~%20%27path%27%5D%0A%5B%27highway%27%20%21~%20%27steps%27%5D%0A%5B%27highway%27%20%21~%20%27motorway%27%5D%0A%5B%27highway%27%20%21~%20%27motorway_link%27%5D%0A%5B%27highway%27%20%21~%20%27raceway%27%5D%0A%5B%27highway%27%20%21~%20%27bridleway%27%5D%0A%5B%27highway%27%20%21~%20%27proposed%27%5D%0A%5B%27highway%27%20%21~%20%27construction%27%5D%0A%5B%27highway%27%20%21~%20%27elevator%27%5D%0A%5B%27highway%27%20%21~%20%27bus_guideway%27%5D%0A%5B%27highway%27%20%21~%20%27footway%27%5D%0A%5B%27highway%27%20%21~%20%27cycleway%27%5D%0A%5B%27highway%27%20%21~%20%27trunk%27%5D%0A%5B%27highway%27%20%21~%20%27platform%27%5D%0A%5B%27foot%27%20%21~%20%27no%27%5D%0A%5B%27service%27%20%21~%20%27drive-through%27%5D%0A%5B%27service%27%20%21~%20%27parking_aisle%27%5D%0A%5B%27access%27%20%21~%20%27private%27%5D%0A%5B%27access%27%20%21~%20%27no%27%5D%3B%0Anode%28w%29%2851.614126037727054%2C0.3124237060546875%2C51.64524078892412%2C0.3632354736328125%29%3B%0A%29%3B%0Aout%3B";
 	httpGet(OverpassURL, 'text', false, function (response) {
 		let OverpassResponse = response;
 		var parser = new DOMParser();
@@ -74,7 +76,7 @@ function preload() {
 				}
 			}
 		}
-		remainingedges = edges.length;
+
 	});
 }
 
@@ -83,11 +85,15 @@ function setup() {
 	windowX = windowWidth;
 	mapWidth = windowWidth;
 	let canvas = createCanvas(windowX, windowY);
+	frameRate(1000);
 	canvas.position(0, 0);
 	colorMode(HSB);
-	button = createButton('Solve');
-	button.position(10, mapHeight + 5);
-	button.mousePressed(solve);
+	solvebutton = createButton('Solve');
+	solvebutton.position(10, mapHeight + 5);
+	solvebutton.mousePressed(solve);
+	removeorphansbutton = createButton('Remove Orphans');
+	removeorphansbutton.position(150, mapHeight + 5);
+	removeorphansbutton.mousePressed(removeOrphans);
 	txtoverpassData = createInput();
 	txtoverpassData.position(10, mapHeight + 30);
 }
@@ -95,9 +101,11 @@ function setup() {
 function draw() {
 	clear();
 	showEdges();
-	showNodes();
 
-	if (solvemode == true) {
+	while (solvemode) {
+
+
+		//if (solvemode == true) {
 		shuffle(currentnode.edges, true);
 		currentnode.edges.sort((a, b) => a.travels - b.travels);
 		let edgewithleasttravels = currentnode.edges[0];
@@ -112,6 +120,8 @@ function draw() {
 			solvemode = false;
 		}
 	}
+	showNodes();
+
 
 
 
@@ -130,18 +140,16 @@ function showNodes() {
 	}
 
 	if (selectnodemode) {
-		if (closestnodetomouse > 0) {
-			nodes[closestnodetomouse].highlight();
-			fill(255, 0, 0);
-			noStroke();
-			text("Selecting node: " + nodes[closestnodetomouse].nodeId, 200, windowY - 10)
-		}
-	} else {
+		startnodeindex = closestnodetomouse;
+	}
+	if (startnodeindex > 0) {
 		nodes[startnodeindex].highlight();
 		fill(255, 0, 0);
 		noStroke();
 		text("Starting node: " + nodes[startnodeindex].nodeId, 200, windowY - 10)
 	}
+
+
 }
 
 function showEdges() {
@@ -150,17 +158,48 @@ function showEdges() {
 	}
 }
 
+function resetEdges() {
+	for (let i = 0; i < edges.length; i++) {
+		edges[i].travels = 0;
+	}
+}
+
+function removeOrphans() { // remove unreachable nodes and edges
+	resetEdges();
+	currentnode = nodes[startnodeindex];
+	floodfill(currentnode, 1);
+	let newedges = [];
+	let newnodes = [];
+	for (let i = 0; i < edges.length; i++) {
+		if (edges[i].travels > 0) {
+			newedges.push(edges[i]);
+		}
+	}
+	edges = newedges;
+	resetEdges();
+}
+
+function floodfill(node, stepssofar) {
+	for (let i = 0; i < node.edges.length; i++) {
+		if (node.edges[i].travels == 0) {
+			node.edges[i].travels = stepssofar;
+			floodfill(node.edges[i].OtherNodeofEdge(node), stepssofar + 1);
+		}
+	}
+}
+
 function solve() {
 	solvemode = true;
-	startnodeindex = closestnodetomouse;
 	currentnode = nodes[startnodeindex];
-	console.log(currentnode);
 	selectnodemode = false;
+	remainingedges = edges.length;
 }
 
 function mouseClicked() {
-	startnodeindex = closestnodetomouse;
-	selectnodemode = false;
+	if (mouseY < mapHeight) {
+		startnodeindex = closestnodetomouse;
+		selectnodemode = false;
+	}
 }
 
 function positionMap() {
@@ -173,6 +212,7 @@ function positionMap() {
 	mapminlon = extent[0];
 	mapmaxlat = extent[3];
 	mapmaxlon = extent[2];
+	
 }
 
 function calcdistance(lat1, long1, lat2, long2) {
@@ -207,7 +247,7 @@ class Node {
 		noStroke();
 		colorMode(HSB);
 		fill(0, 255, 255, 100);
-		ellipse(this.x, this.y, 5);
+		ellipse(this.x, this.y, 2);
 	}
 
 	highlight() {
@@ -240,6 +280,9 @@ class Edge {
 			stroke(255, 255, 255, 0.5);
 		}
 		line(this.from.x, this.from.y, this.to.x, this.to.y);
+		fill(0);
+		noStroke();
+		//text(this.travels, (this.from.x + this.to.x) / 2, (this.from.y + this.to.y) / 2);
 	}
 
 	OtherNodeofEdge(node) {
