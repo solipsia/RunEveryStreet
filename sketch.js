@@ -45,12 +45,10 @@ function setup() {
 	solvebutton = createButton('Solve');
 	solvebutton.position(10, mapHeight + 5);
 	solvebutton.mousePressed(solve);
-	removeorphansbutton = createButton('Remove Orphans');
-	removeorphansbutton.position(150, mapHeight + 5);
-	removeorphansbutton.mousePressed(removeOrphans);
-	removeorphansbutton = createButton('Get data');
-	removeorphansbutton.position(350, mapHeight + 5);
-	removeorphansbutton.mousePressed(getOverpassData);
+	solvebutton.attribute('disabled', ''); // disable the button
+	getdatabutton = createButton('Get data');
+	getdatabutton.position(350, mapHeight + 5);
+	getdatabutton.mousePressed(getOverpassData);
 	choosemapmode = true;
 }
 
@@ -76,6 +74,7 @@ function draw() {
 			}
 		}
 		showNodes();
+		showStatus();
 	}
 }
 
@@ -137,7 +136,6 @@ function getOverpassData() {
 				}
 			}
 		}
-
 	});
 }
 
@@ -155,6 +153,10 @@ function showNodes() {
 	if (selectnodemode) {
 		startnodeindex = closestnodetomouse;
 	}
+	
+}
+
+function showStatus() {
 	if (startnodeindex > 0) {
 		nodes[startnodeindex].highlight();
 		fill(255, 0, 0);
@@ -214,10 +216,11 @@ function solve() {
 	remainingedges = edges.length;
 }
 
-function mouseClicked() {
+function mouseClicked() { // clicked on map to select a node
 	if (mouseY < mapHeight) {
 		startnodeindex = closestnodetomouse;
 		selectnodemode = false;
+		solvebutton.removeAttribute('disabled');// enable the solve button
 	}
 }
 
@@ -250,64 +253,5 @@ function getNodebyId(id) {
 	return null;
 }
 
-class Node {
-	constructor(nodeId_, lat_, lon_) {
-		this.nodeId = nodeId_;
-		this.lat = lat_;
-		this.lon = lon_;
-		this.pos = createVector(1, 1);
-		this.x = map(this.lon, mapminlon, mapmaxlon, 0, mapWidth);
-		this.y = map(this.lat, mapminlat, mapmaxlat, mapHeight, 0);
-		this.edges = [];
-	}
 
-	show() {
-		noStroke();
-		colorMode(HSB);
-		fill(0, 255, 255, 100);
-		ellipse(this.x, this.y, 2);
-	}
 
-	highlight() {
-		noStroke();
-		colorMode(HSB);
-		fill(0, 255, 255, 0.5);
-		ellipse(this.x, this.y, 15);
-	}
-}
-
-class Edge {
-	constructor(from_, to_) {
-		this.from = from_;
-		this.to = to_;
-		this.travels = 0;
-		this.distance = calcdistance(this.from.lat, this.from.lon, this.to.lat, this.to.lon);
-		if (!this.from.edges.includes(this)) {
-			this.from.edges.push(this);
-		}
-		if (!this.to.edges.includes(this)) {
-			this.to.edges.push(this);
-		}
-	}
-
-	show() {
-		strokeWeight(min(10, (this.travels + 1) * 2));
-		if (this.travels > 0) {
-			stroke(80, 255, 255, 38);
-		} else {
-			stroke(255, 255, 255, 0.5);
-		}
-		line(this.from.x, this.from.y, this.to.x, this.to.y);
-		fill(0);
-		noStroke();
-		//text(this.travels, (this.from.x + this.to.x) / 2, (this.from.y + this.to.y) / 2);
-	}
-
-	OtherNodeofEdge(node) {
-		if (node == this.from) {
-			return this.to;
-		} else {
-			return this.from;
-		}
-	}
-}
