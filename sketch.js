@@ -2,7 +2,8 @@ var openlayersmap = new ol.Map({
 	target: 'map',
 	layers: [
 		new ol.layer.Tile({
-			source: new ol.source.OSM(), opacity:0.5
+			source: new ol.source.OSM(),
+			opacity: 0.5
 		})
 	],
 	view: new ol.View({
@@ -11,7 +12,7 @@ var openlayersmap = new ol.Map({
 	})
 });
 
-
+var canvas;
 var mapHeight = 768;
 var windowX, windowY = mapHeight + 50;
 let txtoverpassQuery;
@@ -28,8 +29,9 @@ var mapminlat, mapminlon, mapmaxlat, mapmaxlon;
 var totaledgedistance = 0;
 var closestnodetomouse = -1;
 var startnode, currentnode;
-var selectnodemode = true,
-	solvemode = false;
+var selectnodemode = false,
+	solvemode = false,
+	choosemapmode = false;
 var remainingedges;
 var startnodeindex = -1;
 var debugsteps = 0;
@@ -37,7 +39,11 @@ var debugsteps = 0;
 function preload() {
 	//UpperShenfield
 	//let OverpassURL = "https://overpass-api.de/api/interpreter?data=%0A%28%0Away%2851.62870041465817%2C0.3206205368041992%2C51.63770381417218%2C0.3356838226318359%29%0A%5B%27name%27%5D%0A%5B%27highway%27%5D%0A%5B%27highway%27%20%21~%20%27path%27%5D%0A%5B%27highway%27%20%21~%20%27steps%27%5D%0A%5B%27highway%27%20%21~%20%27motorway%27%5D%0A%5B%27highway%27%20%21~%20%27motorway_link%27%5D%0A%5B%27highway%27%20%21~%20%27raceway%27%5D%0A%5B%27highway%27%20%21~%20%27bridleway%27%5D%0A%5B%27highway%27%20%21~%20%27proposed%27%5D%0A%5B%27highway%27%20%21~%20%27construction%27%5D%0A%5B%27highway%27%20%21~%20%27elevator%27%5D%0A%5B%27highway%27%20%21~%20%27bus_guideway%27%5D%0A%5B%27highway%27%20%21~%20%27footway%27%5D%0A%5B%27highway%27%20%21~%20%27cycleway%27%5D%0A%5B%27highway%27%20%21~%20%27trunk%27%5D%0A%5B%27highway%27%20%21~%20%27platform%27%5D%0A%5B%27foot%27%20%21~%20%27no%27%5D%0A%5B%27service%27%20%21~%20%27drive-through%27%5D%0A%5B%27service%27%20%21~%20%27parking_aisle%27%5D%0A%5B%27access%27%20%21~%20%27private%27%5D%0A%5B%27access%27%20%21~%20%27no%27%5D%3B%0Anode%28w%29%2851.62870041465817%2C0.3206205368041992%2C51.63770381417218%2C0.3356838226318359%29%3B%0A%29%3B%0Aout%3B";
-	let OverpassURL = "https://overpass-api.de/api/interpreter?data=%0A%28%0Away%2851.614126037727054%2C0.3124237060546875%2C51.64524078892412%2C0.3632354736328125%29%0A%5B%27name%27%5D%0A%5B%27highway%27%5D%0A%5B%27highway%27%20%21~%20%27path%27%5D%0A%5B%27highway%27%20%21~%20%27steps%27%5D%0A%5B%27highway%27%20%21~%20%27motorway%27%5D%0A%5B%27highway%27%20%21~%20%27motorway_link%27%5D%0A%5B%27highway%27%20%21~%20%27raceway%27%5D%0A%5B%27highway%27%20%21~%20%27bridleway%27%5D%0A%5B%27highway%27%20%21~%20%27proposed%27%5D%0A%5B%27highway%27%20%21~%20%27construction%27%5D%0A%5B%27highway%27%20%21~%20%27elevator%27%5D%0A%5B%27highway%27%20%21~%20%27bus_guideway%27%5D%0A%5B%27highway%27%20%21~%20%27footway%27%5D%0A%5B%27highway%27%20%21~%20%27cycleway%27%5D%0A%5B%27highway%27%20%21~%20%27trunk%27%5D%0A%5B%27highway%27%20%21~%20%27platform%27%5D%0A%5B%27foot%27%20%21~%20%27no%27%5D%0A%5B%27service%27%20%21~%20%27drive-through%27%5D%0A%5B%27service%27%20%21~%20%27parking_aisle%27%5D%0A%5B%27access%27%20%21~%20%27private%27%5D%0A%5B%27access%27%20%21~%20%27no%27%5D%3B%0Anode%28w%29%2851.614126037727054%2C0.3124237060546875%2C51.64524078892412%2C0.3632354736328125%29%3B%0A%29%3B%0Aout%3B";
+	//let OverpassURL = "https://overpass-api.de/api/interpreter?data=%0A%28%0Away%2851.614126037727054%2C0.3124237060546875%2C51.64524078892412%2C0.3632354736328125%29%0A%5B%27name%27%5D%0A%5B%27highway%27%5D%0A%5B%27highway%27%20%21~%20%27path%27%5D%0A%5B%27highway%27%20%21~%20%27steps%27%5D%0A%5B%27highway%27%20%21~%20%27motorway%27%5D%0A%5B%27highway%27%20%21~%20%27motorway_link%27%5D%0A%5B%27highway%27%20%21~%20%27raceway%27%5D%0A%5B%27highway%27%20%21~%20%27bridleway%27%5D%0A%5B%27highway%27%20%21~%20%27proposed%27%5D%0A%5B%27highway%27%20%21~%20%27construction%27%5D%0A%5B%27highway%27%20%21~%20%27elevator%27%5D%0A%5B%27highway%27%20%21~%20%27bus_guideway%27%5D%0A%5B%27highway%27%20%21~%20%27footway%27%5D%0A%5B%27highway%27%20%21~%20%27cycleway%27%5D%0A%5B%27highway%27%20%21~%20%27trunk%27%5D%0A%5B%27highway%27%20%21~%20%27platform%27%5D%0A%5B%27foot%27%20%21~%20%27no%27%5D%0A%5B%27service%27%20%21~%20%27drive-through%27%5D%0A%5B%27service%27%20%21~%20%27parking_aisle%27%5D%0A%5B%27access%27%20%21~%20%27private%27%5D%0A%5B%27access%27%20%21~%20%27no%27%5D%3B%0Anode%28w%29%2851.614126037727054%2C0.3124237060546875%2C51.64524078892412%2C0.3632354736328125%29%3B%0A%29%3B%0Aout%3B";
+	//loadOverpassData(OverpassURL);
+}
+
+function loadOverpassData(OverpassURL) {
 	httpGet(OverpassURL, 'text', false, function (response) {
 		let OverpassResponse = response;
 		var parser = new DOMParser();
@@ -54,7 +60,7 @@ function preload() {
 			minlon = min(minlon, lon);
 			maxlon = max(maxlon, lon);
 		}
-		positionMap();
+		positionMap(minlon, minlat, maxlon, maxlat);
 		for (let i = 0; i < numnodes; i++) {
 			var lat = XMLnodes[i].getAttribute('lat');
 			var lon = XMLnodes[i].getAttribute('lon');
@@ -84,9 +90,9 @@ function setup() {
 	//createCanvas(windowWidth, windowHeight);
 	windowX = windowWidth;
 	mapWidth = windowWidth;
-	let canvas = createCanvas(windowX, windowY);
+	canvas = createCanvas(windowX, windowY);
 	frameRate(1000);
-	canvas.position(0, 0);
+	//canvas.position(0, 0);
 	colorMode(HSB);
 	solvebutton = createButton('Solve');
 	solvebutton.position(10, mapHeight + 5);
@@ -94,37 +100,63 @@ function setup() {
 	removeorphansbutton = createButton('Remove Orphans');
 	removeorphansbutton.position(150, mapHeight + 5);
 	removeorphansbutton.mousePressed(removeOrphans);
+	removeorphansbutton = createButton('Get data');
+	removeorphansbutton.position(350, mapHeight + 5);
+	removeorphansbutton.mousePressed(getOverpassData);
 	txtoverpassData = createInput();
 	txtoverpassData.position(10, mapHeight + 30);
+	choosemapmode = true;
 }
 
 function draw() {
-	clear();
-	showEdges();
+	if (!choosemapmode) {
+		clear();
+		showEdges();
 
-	while (solvemode) {
-
-
-		//if (solvemode == true) {
-		shuffle(currentnode.edges, true);
-		currentnode.edges.sort((a, b) => a.travels - b.travels);
-		let edgewithleasttravels = currentnode.edges[0];
-		let nextNode = edgewithleasttravels.OtherNodeofEdge(currentnode);
-		edgewithleasttravels.travels++;
-		//currentroute.addWaypoint(nextNode, edgewithleasttravels.distance);
-		currentnode = nextNode;
-		if (edgewithleasttravels.travels == 1) { // then first time traveled on this edge
-			remainingedges--; //fewer edges that have not been travelled
+		while (solvemode) {
+			//if (solvemode == true) {
+			shuffle(currentnode.edges, true);
+			currentnode.edges.sort((a, b) => a.travels - b.travels);
+			let edgewithleasttravels = currentnode.edges[0];
+			let nextNode = edgewithleasttravels.OtherNodeofEdge(currentnode);
+			edgewithleasttravels.travels++;
+			//currentroute.addWaypoint(nextNode, edgewithleasttravels.distance);
+			currentnode = nextNode;
+			if (edgewithleasttravels.travels == 1) { // then first time traveled on this edge
+				remainingedges--; //fewer edges that have not been travelled
+			}
+			if (remainingedges == 0) {
+				solvemode = false;
+			}
 		}
-		if (remainingedges == 0) {
-			solvemode = false;
-		}
+		showNodes();
 	}
-	showNodes();
+}
 
+function getOverpassData() {
+	canvas.position(0, 0);
+	choosemapmode = false;
+	selectnodemode = true;
+	var extent = ol.proj.transformExtent(openlayersmap.getView().calculateExtent(openlayersmap.getSize()), 'EPSG:3857', 'EPSG:4326');
+	mapminlat = extent[1];
+	mapminlon = extent[0];
+	mapmaxlat = extent[3];
+	mapmaxlon = extent[2];
+	let OverpassURL = "https://overpass-api.de/api/interpreter?data=";
+	////WiderShenfield
+	//let payload = "%0A%28%0Away%2851.614126037727054%2C0.3124237060546875%2C51.64524078892412%2C0.3632354736328125%29%0A%5B%27name%27%5D%0A%5B%27highway%27%5D%0A%5B%27highway%27%20%21~%20%27path%27%5D%0A%5B%27highway%27%20%21~%20%27steps%27%5D%0A%5B%27highway%27%20%21~%20%27motorway%27%5D%0A%5B%27highway%27%20%21~%20%27motorway_link%27%5D%0A%5B%27highway%27%20%21~%20%27raceway%27%5D%0A%5B%27highway%27%20%21~%20%27bridleway%27%5D%0A%5B%27highway%27%20%21~%20%27proposed%27%5D%0A%5B%27highway%27%20%21~%20%27construction%27%5D%0A%5B%27highway%27%20%21~%20%27elevator%27%5D%0A%5B%27highway%27%20%21~%20%27bus_guideway%27%5D%0A%5B%27highway%27%20%21~%20%27footway%27%5D%0A%5B%27highway%27%20%21~%20%27cycleway%27%5D%0A%5B%27highway%27%20%21~%20%27trunk%27%5D%0A%5B%27highway%27%20%21~%20%27platform%27%5D%0A%5B%27foot%27%20%21~%20%27no%27%5D%0A%5B%27service%27%20%21~%20%27drive-through%27%5D%0A%5B%27service%27%20%21~%20%27parking_aisle%27%5D%0A%5B%27access%27%20%21~%20%27private%27%5D%0A%5B%27access%27%20%21~%20%27no%27%5D%3B%0Anode%28w%29%2851.614126037727054%2C0.3124237060546875%2C51.64524078892412%2C0.3632354736328125%29%3B%0A%29%3B%0Aout%3B";
+	//UpperShenfield
+	//let payload = "%0A%28%0Away%2851.62870041465817%2C0.3206205368041992%2C51.63770381417218%2C0.3356838226318359%29%0A%5B%27name%27%5D%0A%5B%27highway%27%5D%0A%5B%27highway%27%20%21~%20%27path%27%5D%0A%5B%27highway%27%20%21~%20%27steps%27%5D%0A%5B%27highway%27%20%21~%20%27motorway%27%5D%0A%5B%27highway%27%20%21~%20%27motorway_link%27%5D%0A%5B%27highway%27%20%21~%20%27raceway%27%5D%0A%5B%27highway%27%20%21~%20%27bridleway%27%5D%0A%5B%27highway%27%20%21~%20%27proposed%27%5D%0A%5B%27highway%27%20%21~%20%27construction%27%5D%0A%5B%27highway%27%20%21~%20%27elevator%27%5D%0A%5B%27highway%27%20%21~%20%27bus_guideway%27%5D%0A%5B%27highway%27%20%21~%20%27footway%27%5D%0A%5B%27highway%27%20%21~%20%27cycleway%27%5D%0A%5B%27highway%27%20%21~%20%27trunk%27%5D%0A%5B%27highway%27%20%21~%20%27platform%27%5D%0A%5B%27foot%27%20%21~%20%27no%27%5D%0A%5B%27service%27%20%21~%20%27drive-through%27%5D%0A%5B%27service%27%20%21~%20%27parking_aisle%27%5D%0A%5B%27access%27%20%21~%20%27private%27%5D%0A%5B%27access%27%20%21~%20%27no%27%5D%3B%0Anode%28w%29%2851.62870041465817%2C0.3206205368041992%2C51.63770381417218%2C0.3356838226318359%29%3B%0A%29%3B%0Aout%3B";
+	let overpassquery = "(way({{bbox}})['name']['highway']['highway' !~ 'path']['highway' !~ 'steps']['highway' !~ 'motorway']['highway' !~ 'motorway_link']['highway' !~ 'raceway']['highway' !~ 'bridleway']['highway' !~ 'proposed']['highway' !~ 'construction']['highway' !~ 'elevator']['highway' !~ 'bus_guideway']['highway' !~ 'footway']['highway' !~ 'cycleway']['highway' !~ 'trunk']['highway' !~ 'platform']['foot' !~ 'no']['service' !~ 'drive-through']['service' !~ 'parking_aisle']['access' !~ 'private']['access' !~ 'no'];node(w)({{bbox}}););out;";
+	overpassquery=overpassquery.replace("{{bbox}}",mapminlat+","+ mapminlon+","+ mapmaxlat+","+ mapmaxlon);//      51.614126037727054%2C0.3124237060546875%2C51.64524078892412%2C0.3632354736328125)
+	overpassquery=overpassquery.replace("{{bbox}}",mapminlat+","+ mapminlon+","+ mapmaxlat+","+ mapmaxlon);//      51.614126037727054%2C0.3124237060546875%2C51.64524078892412%2C0.3632354736328125)
+	
+	let payload = encodeURI(overpassquery);
 
-
-
+	console.log(payload);
+	console.log(decodeURI(payload));
+	
+	loadOverpassData(OverpassURL+payload);
 }
 
 function showNodes() {
@@ -189,6 +221,7 @@ function floodfill(node, stepssofar) {
 }
 
 function solve() {
+	removeOrphans();
 	solvemode = true;
 	currentnode = nodes[startnodeindex];
 	selectnodemode = false;
@@ -202,9 +235,9 @@ function mouseClicked() {
 	}
 }
 
-function positionMap() {
-	extent = [minlon, minlat, maxlon, maxlat];
-	//try to fit the map to the node data
+function positionMap(minlon_, minlat_, maxlon_, maxlat_) {
+	extent = [minlon_, minlat_, maxlon_, maxlat_];
+	//try to fit the map to these coordinates
 	openlayersmap.getView().fit(ol.proj.transformExtent(extent, 'EPSG:4326', 'EPSG:3857'), openlayersmap.getSize());
 	//capture the exact coverage of the map after fitting
 	var extent = ol.proj.transformExtent(openlayersmap.getView().calculateExtent(openlayersmap.getSize()), 'EPSG:3857', 'EPSG:4326');
@@ -212,7 +245,6 @@ function positionMap() {
 	mapminlon = extent[0];
 	mapmaxlat = extent[3];
 	mapmaxlon = extent[2];
-	
 }
 
 function calcdistance(lat1, long1, lat2, long2) {
