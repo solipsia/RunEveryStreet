@@ -35,6 +35,8 @@ var selectnodemode = false,
 var remainingedges;
 var startnodeindex = -1;
 var debugsteps = 0;
+var bestdistance;
+var bestroute;
 
 function setup() {
 	windowX = windowWidth;
@@ -64,17 +66,26 @@ function draw() {
 			let edgewithleasttravels = currentnode.edges[0];
 			let nextNode = edgewithleasttravels.OtherNodeofEdge(currentnode);
 			edgewithleasttravels.travels++;
-			//currentroute.addWaypoint(nextNode, edgewithleasttravels.distance);
+			currentroute.addWaypoint(nextNode, edgewithleasttravels.distance);
 			currentnode = nextNode;
 			if (edgewithleasttravels.travels == 1) { // then first time traveled on this edge
 				remainingedges--; //fewer edges that have not been travelled
 			}
 			if (remainingedges == 0) {
 				solvemode = false;
+				currentroute.distance += calcdistance(currentnode.lat, currentnode.lon, nodes[startnodeindex].lat, nodes[startnodeindex].lon);
+				if (currentroute.distance < bestdistance) { // this latest route is now record
+					bestroute = new Route(null, currentroute);
+					//bestroute.exportGPX();
+					bestdistance = currentroute.distance;
+				}
 			}
 		}
 		showNodes();
 		showStatus();
+		if (bestroute != null) {
+			bestroute.show();
+		}
 	}
 }
 
@@ -153,7 +164,7 @@ function showNodes() {
 	if (selectnodemode) {
 		startnodeindex = closestnodetomouse;
 	}
-	
+
 }
 
 function showStatus() {
@@ -214,13 +225,16 @@ function solve() {
 	currentnode = nodes[startnodeindex];
 	selectnodemode = false;
 	remainingedges = edges.length;
+	currentroute = new Route(currentnode, null);
+	bestroute = new Route(currentnode, null);
+	bestdistance = Infinity;
 }
 
 function mouseClicked() { // clicked on map to select a node
 	if (mouseY < mapHeight) {
 		startnodeindex = closestnodetomouse;
 		selectnodemode = false;
-		solvebutton.removeAttribute('disabled');// enable the solve button
+		solvebutton.removeAttribute('disabled'); // enable the solve button
 	}
 }
 
@@ -252,6 +266,3 @@ function getNodebyId(id) {
 	}
 	return null;
 }
-
-
-
