@@ -37,7 +37,7 @@ var debugsteps = 0;
 var bestdistance;
 var bestroute;
 var showSteps = false;
-var iterations;
+var iterations, iterationsperframe;
 
 function setup() {
 	windowX = windowWidth;
@@ -59,6 +59,7 @@ function setup() {
 	stepnumbercheckbox.position(300, mapHeight + 5);
 	stepnumbercheckbox.changed(showStepschecked);
 	choosemapmode = true;
+	iterationsperframe=1;
 }
 
 function draw() { //main loop called by the P5.js framework every frame
@@ -66,7 +67,7 @@ function draw() { //main loop called by the P5.js framework every frame
 		clear();
 		showEdges();
 		if (solvemode) {
-			let iterationsperframe = 2000000/sq(nodes.length);
+			iterationsperframe= max(0.01,iterationsperframe-10*(5-frameRate())); // dynamically adapt iterations per frame to hit 5fps
 			for (let it = 0; it < iterationsperframe; it++) {
 				iterations++;
 				let solutionfound = false;
@@ -200,6 +201,8 @@ function showStatus() {
 			text("Length of roads: " + nf(totaledgedistance, 0, 3) + "km", 10, mapHeight + 80);
 			text("Best route: " + nf(bestroute.distance, 0, 3) + "km", 10, mapHeight + 100);
 			text("Routes tried: " + iterations, 10, mapHeight + 120);
+			text("Frame rate: " + frameRate(), 10, mapHeight + 140);
+			text("Solutions per frame: " + iterationsperframe, 10, mapHeight + 160);
 		}
 	}
 }
