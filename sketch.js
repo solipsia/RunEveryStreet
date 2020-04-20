@@ -14,7 +14,7 @@ var openlayersmap = new ol.Map({
 
 var canvas;
 var mapHeight = 768;
-var windowX, windowY = mapHeight + 50;
+var windowX, windowY = mapHeight + 250;
 let txtoverpassQuery;
 var OSMxml;
 var numnodes, numways;
@@ -33,10 +33,11 @@ var selectnodemode = false,
 	solvemode = false,
 	choosemapmode = false;
 var remainingedges;
-var startnodeindex = -1;
 var debugsteps = 0;
 var bestdistance;
 var bestroute;
+var showSteps = false;
+var iterations;
 
 function setup() {
 	windowX = windowWidth;
@@ -49,8 +50,14 @@ function setup() {
 	solvebutton.mousePressed(solve);
 	solvebutton.attribute('disabled', ''); // disable the button
 	getdatabutton = createButton('Get data');
-	getdatabutton.position(350, mapHeight + 5);
+	getdatabutton.position(100, mapHeight + 5);
 	getdatabutton.mousePressed(getOverpassData);
+	stopbutton = createButton('Stop');
+	stopbutton.position(200, mapHeight + 5);
+	stopbutton.mousePressed(stop);
+	stepnumbercheckbox = createCheckbox('Show Steps', false);
+	stepnumbercheckbox.position(300, mapHeight + 5);
+	stepnumbercheckbox.changed(showStepschecked);
 	choosemapmode = true;
 }
 
@@ -58,28 +65,39 @@ function draw() {
 	if (!choosemapmode) {
 		clear();
 		showEdges();
+		if (solvemode) {
+			let iterationsperframe = 2000000/sq(nodes.length);
+			for (let it = 0; it < iterationsperframe; it++) {
+				iterations++;
+				let solutionfound = false;
+				while (!solutionfound) {
+					shuffle(currentnode.edges, true);
+					currentnode.edges.sort((a, b) => a.travels - b.travels);
+					let edgewithleasttravels = currentnode.edges[0];
+					let nextNode = edgewithleasttravels.OtherNodeofEdge(currentnode);
+					edgewithleasttravels.travels++;
+					currentroute.addWaypoint(nextNode, edgewithleasttravels.distance);
+					currentnode = nextNode;
+					if (edgewithleasttravels.travels == 1) { // then first time traveled on this edge
+						remainingedges--; //fewer edges that have not been travelled
+					}
+					if (remainingedges == 0) {
+						solutionfound = true;
+						currentroute.distance += calcdistance(currentnode.lat, currentnode.lon, startnode.lat, startnode.lon);
+						if (currentroute.distance < bestdistance) { // this latest route is now record
+							bestroute = new Route(null, currentroute);
+							//bestroute.exportGPX();
+							bestdistance = currentroute.distance;
 
-		while (solvemode) {
-			//if (solvemode == true) {
-			shuffle(currentnode.edges, true);
-			currentnode.edges.sort((a, b) => a.travels - b.travels);
-			let edgewithleasttravels = currentnode.edges[0];
-			let nextNode = edgewithleasttravels.OtherNodeofEdge(currentnode);
-			edgewithleasttravels.travels++;
-			currentroute.addWaypoint(nextNode, edgewithleasttravels.distance);
-			currentnode = nextNode;
-			if (edgewithleasttravels.travels == 1) { // then first time traveled on this edge
-				remainingedges--; //fewer edges that have not been travelled
-			}
-			if (remainingedges == 0) {
-				solvemode = false;
-				currentroute.distance += calcdistance(currentnode.lat, currentnode.lon, nodes[startnodeindex].lat, nodes[startnodeindex].lon);
-				if (currentroute.distance < bestdistance) { // this latest route is now record
-					bestroute = new Route(null, currentroute);
-					//bestroute.exportGPX();
-					bestdistance = currentroute.distance;
+						}
+						currentnode = startnode;
+						remainingedges = edges.length;
+						currentroute = new Route(currentnode, null);
+						resetEdges();
+					}
 				}
 			}
+			//solvemode = false;
 		}
 		showNodes();
 		showStatus();
@@ -92,7 +110,8 @@ function draw() {
 function getOverpassData() {
 	canvas.position(0, 0);
 	choosemapmode = false;
-	selectnodemode = true;
+
+	bestroute = null;
 	var extent = ol.proj.transformExtent(openlayersmap.getView().calculateExtent(openlayersmap.getSize()), 'EPSG:3857', 'EPSG:4326');
 	mapminlat = extent[1];
 	mapminlon = extent[0];
@@ -147,12 +166,12 @@ function getOverpassData() {
 				}
 			}
 		}
+		selectnodemode = true;
 	});
 }
 
 function showNodes() {
 	let closestnodetomousedist = Infinity;
-	let disttoMouse = 0;
 	for (let i = 0; i < nodes.length; i++) {
 		nodes[i].show();
 		disttoMouse = dist(nodes[i].x, nodes[i].y, mouseX, mouseY);
@@ -162,17 +181,26 @@ function showNodes() {
 		}
 	}
 	if (selectnodemode) {
-		startnodeindex = closestnodetomouse;
+		startnode = nodes[closestnodetomouse];
 	}
 
 }
 
 function showStatus() {
-	if (startnodeindex > 0) {
-		nodes[startnodeindex].highlight();
+	if (startnode != null) {
+		startnode.highlight();
 		fill(255, 0, 0);
 		noStroke();
-		text("Starting node: " + nodes[startnodeindex].nodeId, 200, windowY - 10)
+		textSize(12);
+		text("Total number nodes: " + nodes.length, 10, mapHeight + 40);
+		text("Total number road sections: " + edges.length, 10, mapHeight + 60);
+
+
+		if (bestroute != null) {
+			text("Length of roads: " + nf(totaledgedistance, 0, 3) + "km", 10, mapHeight + 80);
+			text("Best route: " + nf(bestroute.distance, 0, 3) + "km", 10, mapHeight + 100);
+			text("Routes tried: " + iterations, 10, mapHeight + 120);
+		}
 	}
 }
 
@@ -190,7 +218,7 @@ function resetEdges() {
 
 function removeOrphans() { // remove unreachable nodes and edges
 	resetEdges();
-	currentnode = nodes[startnodeindex];
+	currentnode = startnode;
 	floodfill(currentnode, 1);
 	let newedges = [];
 	let newnodes = [];
@@ -222,12 +250,13 @@ function floodfill(node, stepssofar) {
 function solve() {
 	removeOrphans();
 	solvemode = true;
-	currentnode = nodes[startnodeindex];
+	currentnode = startnode;
 	selectnodemode = false;
 	remainingedges = edges.length;
 	currentroute = new Route(currentnode, null);
 	bestroute = new Route(currentnode, null);
 	bestdistance = Infinity;
+	iterations = 0;
 }
 
 function mouseClicked() { // clicked on map to select a node
@@ -236,6 +265,14 @@ function mouseClicked() { // clicked on map to select a node
 		selectnodemode = false;
 		solvebutton.removeAttribute('disabled'); // enable the solve button
 	}
+}
+
+function showStepschecked() {
+	showSteps = !showSteps;
+}
+
+function stop() {
+	solvemode = false;
 }
 
 function positionMap(minlon_, minlat_, maxlon_, maxlat_) {

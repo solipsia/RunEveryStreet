@@ -22,20 +22,28 @@ class Route {
         stroke(255, 255, 255, 55);
         strokeWeight(5);
         for (let i = 0; i < this.waypoints.length - 1; i++) {
-            stroke(map(i, 0, this.waypoints.length - 1, 0, 155), 255, 255, 200);
-            line(this.waypoints[i].x, this.waypoints[i].y, this.waypoints[i + 1].x, this.waypoints[i + 1].y);
-            fill(0, 0, 0, 150);
-            noStroke();
-            let textangle = map(i % 10, 0, 10, 0, TWO_PI);
-            text(i, 17 * cos(textangle) + (this.waypoints[i].x + this.waypoints[i + 1].x) / 2, 17 * sin(textangle) + (this.waypoints[i].y + this.waypoints[i + 1].y) / 2);
+            let from = createVector(this.waypoints[i].x, this.waypoints[i].y);
+            let to = createVector(this.waypoints[i + 1].x, this.waypoints[i + 1].y);
+            let vline = p5.Vector.sub(to, from);
+            let hue = map(i, 0, this.waypoints.length - 1, 0, 155);
+            stroke(hue, 255, 255, 0.5);
+            line(from.x, from.y, to.x, to.y);
+            if (showSteps) {
+                fill(hue, 255, 55, 0.8);
+                noStroke();
+                textSize(8);
+                let textangle = vline.heading() + HALF_PI;
+                text(i, 10 * cos(textangle) + (from.x + to.x) / 2 - 5, 10 * sin(textangle) + (from.y + to.y) / 2);
+            }
+
         }
         noStroke();
-        fill(149, 255, 255, 255);
+        fill(0, 255, 255, 255);
         if (this.waypoints.length > 0) {
             ellipse(this.waypoints[0].x, this.waypoints[0].y, 20, 20); //first waypoint
         }
 
-        fill(49, 255, 255, 255);
-        //ellipse(waypoints.get(bestroute.waypoints.length - 1).pos.x, waypoints.get(bestroute.waypoints.length - 1).pos.y, 20, 20); //last waypoint
+        fill(149, 255, 255, 255);
+        ellipse(this.waypoints[bestroute.waypoints.length - 1].x, this.waypoints[bestroute.waypoints.length - 1].y, 20, 20); //last waypoint
     }
 }
