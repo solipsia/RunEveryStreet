@@ -61,7 +61,7 @@ function setup() {
 	choosemapmode = true;
 }
 
-function draw() {
+function draw() { //main loop called by the P5.js framework every frame
 	if (!choosemapmode) {
 		clear();
 		showEdges();
