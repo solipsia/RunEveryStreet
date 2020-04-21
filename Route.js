@@ -1,21 +1,41 @@
 class Route {
     constructor(startnode, originalroute) {
+
         if (originalroute == null) { // start with just a node
             this.waypoints = [];
+            this.minlat = Infinity;
+            this.maxlat = 0;
+            this.minlon = Infinity;
+            this.maxlon = 0;
             this.waypoints.push(startnode);
             this.distance = 0;
+            this.doublingsup=0;
         } else { // make a copy of a route
             this.waypoints = [];
             for (let i = 0; i < originalroute.waypoints.length; i++) {
                 this.waypoints.push(originalroute.waypoints[i]);
             }
+            this.minlat = originalroute.minlat;
+            this.maxlat = originalroute.maxlat;
+            this.minlon = originalroute.minlon;
+            this.maxlon = originalroute.maxlon;
             this.distance = originalroute.distance;
+            this.doublingsup=originalroute.doublingsup;
         }
     }
 
-    addWaypoint(node, dist) {
+    addWaypoint(node, dist, doublingsup) {
         this.waypoints.push(node);
         this.distance += dist;
+        this.minlat = min(this.minlat, node.lat);
+        this.maxlat = max(this.maxlat, node.lat);
+        this.minlon = min(this.minlon, node.lon);
+        this.maxlon = max(this.maxlon, node.lon);
+        this.doublingsup+=doublingsup;
+    }
+
+    area() { // rough approximation of the area
+        return (this.maxlat - this.minlat) * (this.maxlon - this.minlon);
     }
 
     show() {
