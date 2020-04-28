@@ -257,7 +257,7 @@ function solveRES() {
 	iterationsperframe = 1;
 }
 
-function mouseClicked() { // clicked on map to select a node
+function mousePressed() { // clicked on map to select a node
 	if (mouseY < mapHeight) { //clicked on map
 		startnodeindex = closestnodetomouse;
 		selectnodemode = false;
