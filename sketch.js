@@ -259,6 +259,7 @@ function solveRES() {
 
 function mousePressed() { // clicked on map to select a node
 	if (mouseY < mapHeight) { //clicked on map
+		showNodes(); // recalculate closest node
 		startnodeindex = closestnodetomouse;
 		selectnodemode = false;
 		solveRES();
