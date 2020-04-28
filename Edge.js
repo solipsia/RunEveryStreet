@@ -1,4 +1,4 @@
-class Edge {
+class Edge { //section of road that connects nodes
 	constructor(from_, to_) {
 		this.from = from_;
 		this.to = to_;
@@ -14,15 +14,10 @@ class Edge {
 
 	show() {
 		strokeWeight(min(10, (this.travels + 1) * 2));
-		if (this.travels > 0) {
-			stroke(80, 255, 255, 38);
-		} else {
-			stroke(255, 255, 255, 0.5);
-		}
+		stroke(55, 255, 255, 0.8);
 		line(this.from.x, this.from.y, this.to.x, this.to.y);
 		fill(0);
 		noStroke();
-		//text(this.travels, (this.from.x + this.to.x) / 2, (this.from.y + this.to.y) / 2);
 	}
 
 	OtherNodeofEdge(node) {

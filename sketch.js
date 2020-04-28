@@ -31,7 +31,6 @@ var closestnodetomouse = -1;
 var startnode, currentnode;
 var selectnodemode = false,
 	solveRESmode = false,
-	solveLoopmode = false,
 	choosemapmode = false;
 var remainingedges;
 var debugsteps = 0;
@@ -48,31 +47,16 @@ function setup() {
 	mapWidth = windowWidth;
 	canvas = createCanvas(windowX, windowY);
 	canvas.parent('sketch-holder');
-	frameRate(1000);
 	colorMode(HSB);
-	btn1 = createButton('Solve RunEveryStreet');
-	btn1.position(10, mapHeight + 35);
-	btn1.mousePressed(solveRES);
-	btn1.attribute('disabled', ''); // disable the button
-	btn2 = createButton('Solve Loop');
-	btn2.position(10, mapHeight + 65);
-	btn2.mousePressed(solveLoop);
-	btn2.attribute('disabled', ''); // disable the button
 	btn3 = createButton('Get data');
 	btn3.position(10, mapHeight + 5);
 	btn3.mousePressed(getOverpassData);
 	btn4 = createButton('Stop');
 	btn4.position(200, mapHeight + 5);
 	btn4.mousePressed(btnStop);
-	btn5 = createButton('Draw Route');
-	btn5.position(10, mapHeight + 95);
-	btn5.mousePressed(btnDrawRoute);
 	chk1 = createCheckbox('Show Steps', showSteps);
 	chk1.position(300, mapHeight + 5);
 	chk1.changed(function(){showSteps = !showSteps;});
-	chk2 = createCheckbox('Show Roads', showRoads);
-	chk2.position(450, mapHeight + 5);
-	chk2.changed(function() {showRoads=!showRoads});
 	choosemapmode = true;
 	iterationsperframe = 1;
 }
@@ -80,16 +64,16 @@ function setup() {
 function draw() { //main loop called by the P5.js framework every frame
 	if (!choosemapmode) {
 		clear();
-		if (showRoads) {showEdges();}
+		if (showRoads) {showEdges();} //draw connections between nodes
 		if (solveRESmode) {
 			iterationsperframe = max(0.01, iterationsperframe - 1 * (5 - frameRate())); // dynamically adapt iterations per frame to hit 5fps
 			for (let it = 0; it < iterationsperframe; it++) {
 				iterations++;
 				let solutionfound = false;
-				while (!solutionfound) {
+				while (!solutionfound) { //run randomly down least roads until all roads have been run
 					shuffle(currentnode.edges, true);
-					currentnode.edges.sort((a, b) => a.travels - b.travels);
-					let edgewithleasttravels = currentnode.edges[0];
+					currentnode.edges.sort((a, b) => a.travels - b.travels); // sort edges around node by number of times traveled, and travel down least.
+					let edgewithleasttravels = currentnode.edges[0]; 
 					let nextNode = edgewithleasttravels.OtherNodeofEdge(currentnode);
 					edgewithleasttravels.travels++;
 					currentroute.addWaypoint(nextNode, edgewithleasttravels.distance);
@@ -97,14 +81,13 @@ function draw() { //main loop called by the P5.js framework every frame
 					if (edgewithleasttravels.travels == 1) { // then first time traveled on this edge
 						remainingedges--; //fewer edges that have not been travelled
 					}
-					if (remainingedges == 0) {
+					if (remainingedges == 0) { //once all edges have been traveled, the route is complete. Work out total distance and see if this route is the best so far.
 						solutionfound = true;
 						currentroute.distance += calcdistance(currentnode.lat, currentnode.lon, startnode.lat, startnode.lon);
 						if (currentroute.distance < bestdistance) { // this latest route is now record
 							bestroute = new Route(null, currentroute);
 							//bestroute.exportGPX();
 							bestdistance = currentroute.distance;
-
 						}
 						currentnode = startnode;
 						remainingedges = edges.length;
@@ -114,53 +97,6 @@ function draw() { //main loop called by the P5.js framework every frame
 				}
 			}
 		}
-
-		if (solveLoopmode) {
-			iterationsperframe = max(0.01, iterationsperframe - 1 * (5 - frameRate())); // dynamically adapt iterations per frame to hit 5fps
-			for (let it = 0; it < iterationsperframe; it++) {
-				resetEdges();
-				let solutionfound = false;
-				let targetdistance = 20;
-				let currentdistance = 0;
-				currentnode = startnode;
-				currentroute = new Route(currentnode, null);
-				iterations = 0;
-				while (!solutionfound) {
-					iterations++;
-					shuffle(currentnode.edges, true);
-					currentnode.edges.sort((a, b) => a.travels - b.travels);
-					let edgewithleasttravels = currentnode.edges[0];
-					let nextNode = edgewithleasttravels.OtherNodeofEdge(currentnode);
-					if (edgewithleasttravels.travels == 1) { // route too long, reset
-						currentdistance = 0;
-						currentnode = startnode;
-						currentroute = new Route(currentnode, null);
-						resetEdges();
-					} else {
-						edgewithleasttravels.travels++;
-						currentroute.addWaypoint(nextNode, edgewithleasttravels.distance, edgewithleasttravels.travels - 1);
-						currentnode = nextNode;
-						currentdistance = currentroute.distance;
-						let distancehome = calcdistance(currentnode.lat, currentnode.lon, startnode.lat, startnode.lon);
-						//console.log(bestdoublingsup,currentroute.doublingsup);
-						if (currentdistance > 1 && distancehome < 0.1) {
-							solutionfound = true;
-							resetEdges();
-							//let area = currentroute.area();
-
-							if (currentroute.distance > bestdistance) { // this latest route is now record
-								bestroute = new Route(null, currentroute);
-								bestdistance = currentroute.distance;
-							}
-
-
-						}
-					}
-				}
-			}
-		}
-
-
 		showNodes();
 		showStatus();
 		if (bestroute != null) {
@@ -169,20 +105,16 @@ function draw() { //main loop called by the P5.js framework every frame
 	}
 }
 
-function getOverpassData() {
+function getOverpassData() { //load nodes and edge map data in XML format from OpenStreetMap via the Overpass API
 	canvas.position(0, 34); // start just below logo image
 	choosemapmode = false;
 	bestroute = null;
-	var extent = ol.proj.transformExtent(openlayersmap.getView().calculateExtent(openlayersmap.getSize()), 'EPSG:3857', 'EPSG:4326');
+	var extent = ol.proj.transformExtent(openlayersmap.getView().calculateExtent(openlayersmap.getSize()), 'EPSG:3857', 'EPSG:4326'); //get the coordinates current view on the map
 	mapminlat = extent[1];
 	mapminlon = extent[0];
 	mapmaxlat = extent[3];
 	mapmaxlon = extent[2];
 	let OverpassURL = "https://overpass-api.de/api/interpreter?data=";
-	////WiderShenfield
-	//let payload = "%0A%28%0Away%2851.614126037727054%2C0.3124237060546875%2C51.64524078892412%2C0.3632354736328125%29%0A%5B%27name%27%5D%0A%5B%27highway%27%5D%0A%5B%27highway%27%20%21~%20%27path%27%5D%0A%5B%27highway%27%20%21~%20%27steps%27%5D%0A%5B%27highway%27%20%21~%20%27motorway%27%5D%0A%5B%27highway%27%20%21~%20%27motorway_link%27%5D%0A%5B%27highway%27%20%21~%20%27raceway%27%5D%0A%5B%27highway%27%20%21~%20%27bridleway%27%5D%0A%5B%27highway%27%20%21~%20%27proposed%27%5D%0A%5B%27highway%27%20%21~%20%27construction%27%5D%0A%5B%27highway%27%20%21~%20%27elevator%27%5D%0A%5B%27highway%27%20%21~%20%27bus_guideway%27%5D%0A%5B%27highway%27%20%21~%20%27footway%27%5D%0A%5B%27highway%27%20%21~%20%27cycleway%27%5D%0A%5B%27highway%27%20%21~%20%27trunk%27%5D%0A%5B%27highway%27%20%21~%20%27platform%27%5D%0A%5B%27foot%27%20%21~%20%27no%27%5D%0A%5B%27service%27%20%21~%20%27drive-through%27%5D%0A%5B%27service%27%20%21~%20%27parking_aisle%27%5D%0A%5B%27access%27%20%21~%20%27private%27%5D%0A%5B%27access%27%20%21~%20%27no%27%5D%3B%0Anode%28w%29%2851.614126037727054%2C0.3124237060546875%2C51.64524078892412%2C0.3632354736328125%29%3B%0A%29%3B%0Aout%3B";
-	//UpperShenfield
-	//let payload = "%0A%28%0Away%2851.62870041465817%2C0.3206205368041992%2C51.63770381417218%2C0.3356838226318359%29%0A%5B%27name%27%5D%0A%5B%27highway%27%5D%0A%5B%27highway%27%20%21~%20%27path%27%5D%0A%5B%27highway%27%20%21~%20%27steps%27%5D%0A%5B%27highway%27%20%21~%20%27motorway%27%5D%0A%5B%27highway%27%20%21~%20%27motorway_link%27%5D%0A%5B%27highway%27%20%21~%20%27raceway%27%5D%0A%5B%27highway%27%20%21~%20%27bridleway%27%5D%0A%5B%27highway%27%20%21~%20%27proposed%27%5D%0A%5B%27highway%27%20%21~%20%27construction%27%5D%0A%5B%27highway%27%20%21~%20%27elevator%27%5D%0A%5B%27highway%27%20%21~%20%27bus_guideway%27%5D%0A%5B%27highway%27%20%21~%20%27footway%27%5D%0A%5B%27highway%27%20%21~%20%27cycleway%27%5D%0A%5B%27highway%27%20%21~%20%27trunk%27%5D%0A%5B%27highway%27%20%21~%20%27platform%27%5D%0A%5B%27foot%27%20%21~%20%27no%27%5D%0A%5B%27service%27%20%21~%20%27drive-through%27%5D%0A%5B%27service%27%20%21~%20%27parking_aisle%27%5D%0A%5B%27access%27%20%21~%20%27private%27%5D%0A%5B%27access%27%20%21~%20%27no%27%5D%3B%0Anode%28w%29%2851.62870041465817%2C0.3206205368041992%2C51.63770381417218%2C0.3356838226318359%29%3B%0A%29%3B%0Aout%3B";
 	let overpassquery = "(way({{bbox}})['name']['highway']['highway' !~ 'path']['highway' !~ 'steps']['highway' !~ 'motorway']['highway' !~ 'motorway_link']['highway' !~ 'raceway']['highway' !~ 'bridleway']['highway' !~ 'proposed']['highway' !~ 'construction']['highway' !~ 'elevator']['highway' !~ 'bus_guideway']['highway' !~ 'footway']['highway' !~ 'cycleway']['highway' !~ 'trunk']['highway' !~ 'platform']['foot' !~ 'no']['service' !~ 'drive-through']['service' !~ 'parking_aisle']['access' !~ 'private']['access' !~ 'no'];node(w)({{bbox}}););out;";
 	overpassquery = overpassquery.replace("{{bbox}}", mapminlat + "," + mapminlon + "," + mapmaxlat + "," + mapmaxlon);
 	overpassquery = overpassquery.replace("{{bbox}}", mapminlat + "," + mapminlon + "," + mapmaxlat + "," + mapmaxlon);
@@ -242,29 +174,28 @@ function showNodes() {
 		}
 	}
 	if (selectnodemode) {
-		startnode = nodes[closestnodetomouse];
+		startnode = nodes[closestnodetomouse]; // highlight the node that's closest to the mouse pointer
 	}
-
 }
 
 function showStatus() {
 	if (startnode != null) {
 		startnode.highlight();
-		fill(255, 0, 0);
+		let textx=150;
+		let texty=mapHeight+40;
+		fill(0, 5, 225);
 		noStroke();
 		textSize(12);
-		text("Total number nodes: " + nodes.length, 150, mapHeight + 40);
-		text("Total number road sections: " + edges.length, 150, mapHeight + 60);
-
-
+		text("Total number nodes: " + nodes.length, 150, texty);
+		text("Total number road sections: " + edges.length, 150, texty+20);
 		if (bestroute != null) {
-			text("Length of roads: " + nf(totaledgedistance, 0, 3) + "km", 150, mapHeight + 80);
+			text("Length of roads: " + nf(totaledgedistance, 0, 3) + "km", 150, texty+40);
 			if (bestroute.waypoints.length > 0) {
-				text("Best route: " + nf(bestroute.distance, 0, 3) + "km, doublings:" + bestdoublingsup + " distance home:" + nf(calcdistance(bestroute.waypoints[bestroute.waypoints.length - 1].lat, bestroute.waypoints[bestroute.waypoints.length - 1].lon, startnode.lat, startnode.lon), 0, 3), 150, mapHeight + 100);
+				text("Best route: " + nf(bestroute.distance, 0, 3) + "km, doublings:" + bestdoublingsup + " distance home:" + nf(calcdistance(bestroute.waypoints[bestroute.waypoints.length - 1].lat, bestroute.waypoints[bestroute.waypoints.length - 1].lon, startnode.lat, startnode.lon), 0, 3), 150, texty+60);
 			}
-			text("Routes tried: " + iterations, 150, mapHeight + 120);
-			text("Frame rate: " + frameRate(), 150, mapHeight + 140);
-			text("Solutions per frame: " + iterationsperframe, 150, mapHeight + 160);
+			text("Routes tried: " + iterations, 150, texty+80);
+			text("Frame rate: " + frameRate(), 150, texty+100);
+			text("Solutions per frame: " + iterationsperframe, 150, texty+120);
 		}
 	}
 }
@@ -281,10 +212,10 @@ function resetEdges() {
 	}
 }
 
-function removeOrphans() { // remove unreachable nodes and edges
+function removeOrphans() { // remove unreachable nodes and edges 
 	resetEdges();
 	currentnode = startnode;
-	floodfill(currentnode, 1);
+	floodfill(currentnode, 1); // recursively walk every unwalked route until all connected nodes have been reached at least once, then remove unwalked ones.
 	let newedges = [];
 	let newnodes = [];
 	for (let i = 0; i < edges.length; i++) {
@@ -325,34 +256,17 @@ function solveRES() {
 	iterationsperframe = 1;
 }
 
-function solveLoop() {
-	removeOrphans();
-	solveLoopmode = true;
-	selectnodemode = false;
-	showRoads=false;
-	bestroute = new Route(currentnode, null);
-	bestarea = 0;
-	bestdistance = 0;
-	bestdoublingsup = Infinity;
-	iterationsperframe = 1;
-}
-
 function mouseClicked() { // clicked on map to select a node
-	if (mouseY < mapHeight) {
+	if (mouseY < mapHeight) { //clicked on map
 		startnodeindex = closestnodetomouse;
 		selectnodemode = false;
-		btn1.removeAttribute('disabled'); // enable the solve button
-		btn2.removeAttribute('disabled'); // enable the solve button
+		solveRES();
 	}
 }
 
 function btnStop() {
 	solveRESmode = false;
 	solveLoopmode = false;
-}
-
-function btnDrawRoute(){
-
 }
 
 function positionMap(minlon_, minlat_, maxlon_, maxlat_) {

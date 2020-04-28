@@ -1,7 +1,6 @@
 class Route {
     constructor(startnode, originalroute) {
-
-        if (originalroute == null) { // start with just a node
+        if (originalroute == null) { // create a new route with just a node
             this.waypoints = [];
             this.minlat = Infinity;
             this.maxlat = 0;
@@ -10,7 +9,7 @@ class Route {
             this.waypoints.push(startnode);
             this.distance = 0;
             this.doublingsup=0;
-        } else { // make a copy of a route
+        } else { // make a deep copy of a route
             this.waypoints = [];
             for (let i = 0; i < originalroute.waypoints.length; i++) {
                 this.waypoints.push(originalroute.waypoints[i]);
@@ -58,12 +57,11 @@ class Route {
 
         }
         noStroke();
-        fill(0, 255, 255, 255);
         if (this.waypoints.length > 0) {
-            ellipse(this.waypoints[0].x, this.waypoints[0].y, 20, 20); //first waypoint
+            fill(0, 255, 255, 0.8);
+            ellipse(this.waypoints[0].x, this.waypoints[0].y, 20, 20); //show the first waypoint
         }
-
-        fill(149, 255, 255, 255);
-        ellipse(this.waypoints[bestroute.waypoints.length - 1].x, this.waypoints[bestroute.waypoints.length - 1].y, 20, 20); //last waypoint
+        fill(149, 255, 255, 0.8);
+        ellipse(this.waypoints[bestroute.waypoints.length - 1].x, this.waypoints[bestroute.waypoints.length - 1].y, 20, 20); //show the last waypoint
     }
 }
