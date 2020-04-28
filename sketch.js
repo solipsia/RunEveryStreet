@@ -40,31 +40,39 @@ var bestroute;
 var bestarea;
 var bestdoublingsup;
 var showSteps = false;
+var showRoads = true;
 var iterations, iterationsperframe;
 
 function setup() {
 	windowX = windowWidth;
 	mapWidth = windowWidth;
 	canvas = createCanvas(windowX, windowY);
+	canvas.parent('sketch-holder');
 	frameRate(1000);
 	colorMode(HSB);
 	btn1 = createButton('Solve RunEveryStreet');
-	btn1.position(10, mapHeight + 5);
+	btn1.position(10, mapHeight + 35);
 	btn1.mousePressed(solveRES);
 	btn1.attribute('disabled', ''); // disable the button
 	btn2 = createButton('Solve Loop');
-	btn2.position(10, mapHeight + 25);
+	btn2.position(10, mapHeight + 65);
 	btn2.mousePressed(solveLoop);
 	btn2.attribute('disabled', ''); // disable the button
 	btn3 = createButton('Get data');
-	btn3.position(100, mapHeight + 5);
+	btn3.position(10, mapHeight + 5);
 	btn3.mousePressed(getOverpassData);
 	btn4 = createButton('Stop');
 	btn4.position(200, mapHeight + 5);
-	btn4.mousePressed(stop);
-	chk1 = createCheckbox('Show Steps', false);
+	btn4.mousePressed(btnStop);
+	btn5 = createButton('Draw Route');
+	btn5.position(10, mapHeight + 95);
+	btn5.mousePressed(btnDrawRoute);
+	chk1 = createCheckbox('Show Steps', showSteps);
 	chk1.position(300, mapHeight + 5);
-	chk1.changed(showStepschecked);
+	chk1.changed(function(){showSteps = !showSteps;});
+	chk2 = createCheckbox('Show Roads', showRoads);
+	chk2.position(450, mapHeight + 5);
+	chk2.changed(function() {showRoads=!showRoads});
 	choosemapmode = true;
 	iterationsperframe = 1;
 }
@@ -72,9 +80,9 @@ function setup() {
 function draw() { //main loop called by the P5.js framework every frame
 	if (!choosemapmode) {
 		clear();
-		showEdges();
+		if (showRoads) {showEdges();}
 		if (solveRESmode) {
-			iterationsperframe = max(0.01, iterationsperframe - 10 * (5 - frameRate())); // dynamically adapt iterations per frame to hit 5fps
+			iterationsperframe = max(0.01, iterationsperframe - 1 * (5 - frameRate())); // dynamically adapt iterations per frame to hit 5fps
 			for (let it = 0; it < iterationsperframe; it++) {
 				iterations++;
 				let solutionfound = false;
@@ -108,7 +116,7 @@ function draw() { //main loop called by the P5.js framework every frame
 		}
 
 		if (solveLoopmode) {
-			iterationsperframe = max(0.01, iterationsperframe - 10 * (5 - frameRate())); // dynamically adapt iterations per frame to hit 5fps
+			iterationsperframe = max(0.01, iterationsperframe - 1 * (5 - frameRate())); // dynamically adapt iterations per frame to hit 5fps
 			for (let it = 0; it < iterationsperframe; it++) {
 				resetEdges();
 				let solutionfound = false;
@@ -116,7 +124,6 @@ function draw() { //main loop called by the P5.js framework every frame
 				let currentdistance = 0;
 				currentnode = startnode;
 				currentroute = new Route(currentnode, null);
-
 				iterations = 0;
 				while (!solutionfound) {
 					iterations++;
@@ -124,29 +131,30 @@ function draw() { //main loop called by the P5.js framework every frame
 					currentnode.edges.sort((a, b) => a.travels - b.travels);
 					let edgewithleasttravels = currentnode.edges[0];
 					let nextNode = edgewithleasttravels.OtherNodeofEdge(currentnode);
-					edgewithleasttravels.travels++;
-					currentroute.addWaypoint(nextNode, edgewithleasttravels.distance, edgewithleasttravels.travels - 1);
-					currentnode = nextNode;
-					currentdistance = currentroute.distance;
-					let distancehome = calcdistance(currentnode.lat, currentnode.lon, startnode.lat, startnode.lon);
-					//console.log(bestdoublingsup,currentroute.doublingsup);
-					if (currentdistance > 1 && distancehome < 0.1) {
-						solutionfound = true;
-						resetEdges();
-						//let area = currentroute.area();
-
-						if (currentroute.distance > bestdistance) { // this latest route is now record
-							bestroute = new Route(null, currentroute);
-							bestdistance = currentroute.distance;
-						}
-
-
-					}
-					if (edgewithleasttravels.travels == 2) { // route too long, reset
+					if (edgewithleasttravels.travels == 1) { // route too long, reset
 						currentdistance = 0;
 						currentnode = startnode;
 						currentroute = new Route(currentnode, null);
 						resetEdges();
+					} else {
+						edgewithleasttravels.travels++;
+						currentroute.addWaypoint(nextNode, edgewithleasttravels.distance, edgewithleasttravels.travels - 1);
+						currentnode = nextNode;
+						currentdistance = currentroute.distance;
+						let distancehome = calcdistance(currentnode.lat, currentnode.lon, startnode.lat, startnode.lon);
+						//console.log(bestdoublingsup,currentroute.doublingsup);
+						if (currentdistance > 1 && distancehome < 0.1) {
+							solutionfound = true;
+							resetEdges();
+							//let area = currentroute.area();
+
+							if (currentroute.distance > bestdistance) { // this latest route is now record
+								bestroute = new Route(null, currentroute);
+								bestdistance = currentroute.distance;
+							}
+
+
+						}
 					}
 				}
 			}
@@ -162,9 +170,8 @@ function draw() { //main loop called by the P5.js framework every frame
 }
 
 function getOverpassData() {
-	canvas.position(0, 0);
+	canvas.position(0, 34); // start just below logo image
 	choosemapmode = false;
-
 	bestroute = null;
 	var extent = ol.proj.transformExtent(openlayersmap.getView().calculateExtent(openlayersmap.getSize()), 'EPSG:3857', 'EPSG:4326');
 	mapminlat = extent[1];
@@ -227,7 +234,7 @@ function getOverpassData() {
 function showNodes() {
 	let closestnodetomousedist = Infinity;
 	for (let i = 0; i < nodes.length; i++) {
-		nodes[i].show();
+		if (showRoads) {nodes[i].show();}
 		disttoMouse = dist(nodes[i].x, nodes[i].y, mouseX, mouseY);
 		if (disttoMouse < closestnodetomousedist) {
 			closestnodetomousedist = disttoMouse;
@@ -309,21 +316,25 @@ function solveRES() {
 	removeOrphans();
 	solveRESmode = true;
 	selectnodemode = false;
+	showRoads=false;
 	remainingedges = edges.length;
 	currentroute = new Route(currentnode, null);
 	bestroute = new Route(currentnode, null);
 	bestdistance = Infinity;
 	iterations = 0;
+	iterationsperframe = 1;
 }
 
 function solveLoop() {
 	removeOrphans();
 	solveLoopmode = true;
 	selectnodemode = false;
+	showRoads=false;
 	bestroute = new Route(currentnode, null);
 	bestarea = 0;
 	bestdistance = 0;
 	bestdoublingsup = Infinity;
+	iterationsperframe = 1;
 }
 
 function mouseClicked() { // clicked on map to select a node
@@ -335,13 +346,13 @@ function mouseClicked() { // clicked on map to select a node
 	}
 }
 
-function showStepschecked() {
-	showSteps = !showSteps;
-}
-
-function stop() {
+function btnStop() {
 	solveRESmode = false;
 	solveLoopmode = false;
+}
+
+function btnDrawRoute(){
+
 }
 
 function positionMap(minlon_, minlat_, maxlon_, maxlat_) {
