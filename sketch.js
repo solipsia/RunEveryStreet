@@ -13,8 +13,8 @@ var openlayersmap = new ol.Map({
 });
 
 var canvas;
-var mapHeight = 768;
-var windowX, windowY = mapHeight + 250;
+var mapHeight;
+var windowX, windowY;
 let txtoverpassQuery;
 var OSMxml;
 var numnodes, numways;
@@ -43,19 +43,20 @@ var showRoads = true;
 var iterations, iterationsperframe;
 
 function setup() {
-	windowX = windowWidth;
 	mapWidth = windowWidth;
+	mapHeight = windowHeight;
+	windowX = windowWidth;
+	windowY = mapHeight//; + 250;
 	canvas = createCanvas(windowX, windowY);
-	canvas.parent('sketch-holder');
 	colorMode(HSB);
 	btn3 = createButton('Get data');
-	btn3.position(10, mapHeight + 5);
+	btn3.position(10, mapHeight - 50);
 	btn3.mousePressed(getOverpassData);
 	btn4 = createButton('Stop');
-	btn4.position(200, mapHeight + 5);
+	btn4.position(200, mapHeight -50);
 	btn4.mousePressed(btnStop);
 	chk1 = createCheckbox('Show Steps', showSteps);
-	chk1.position(300, mapHeight + 5);
+	chk1.position(300, mapHeight -50);
 	chk1.changed(function(){showSteps = !showSteps;});
 	choosemapmode = true;
 	iterationsperframe = 1;
@@ -182,7 +183,7 @@ function showStatus() {
 	if (startnode != null) {
 		startnode.highlight();
 		let textx=150;
-		let texty=mapHeight+40;
+		let texty=mapHeight-200;
 		fill(0, 5, 225);
 		noStroke();
 		textSize(12);
