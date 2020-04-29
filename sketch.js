@@ -109,7 +109,7 @@ function draw() { //main loop called by the P5.js framework every frame
 }
 
 function getOverpassData() { //load nodes and edge map data in XML format from OpenStreetMap via the Overpass API
-	hideMessage();
+	showMessage("Loading map data");
 	canvas.position(0, 34); // start just below logo image
 	choosemapmode = false;
 	bestroute = null;
@@ -263,6 +263,7 @@ function solveRES() {
 
 function mouseClicked() { // clicked on map to select a node
 	if (mouseY < mapHeight) { //clicked on map
+		hideMessage();
 		showNodes(); // recalculate closest node
 		selectnodemode = false;
 		solveRES();
@@ -304,6 +305,7 @@ function getNodebyId(id) {
 }
 
 function showMessage(msg) {
+	if (msgDiv) {hideMessage();}
 	let xpos = 20;
 	msgbckDiv = createDiv('');
 	msgbckDiv.style('position','fixed'); 
@@ -319,7 +321,7 @@ function showMessage(msg) {
 	msgDiv = createDiv('');
 	msgDiv.style('position','fixed'); 
 	msgDiv.style('width','400px'); 
-	msgDiv.style('top',xpos+50+'px'); 
+	msgDiv.style('top',xpos+55+'px'); 
 	msgDiv.style('left','50%'); 
 	msgDiv.style('color','white'); 
 	msgDiv.style('background','none'); 
@@ -335,6 +337,6 @@ function showMessage(msg) {
 }
 
 function hideMessage(){
-	msgbckDiv.style('top',10000+'px'); 
-	msgDiv.style('top',10000+'px'); 
+	msgbckDiv.remove();
+	msgDiv.remove();
 }
