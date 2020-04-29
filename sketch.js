@@ -41,6 +41,7 @@ var bestdoublingsup;
 var showSteps = false;
 var showRoads = true;
 var iterations, iterationsperframe;
+var msgbckDiv,msgDiv;
 
 function setup() {
 	mapWidth = windowWidth;
@@ -49,7 +50,7 @@ function setup() {
 	windowY = mapHeight//; + 250;
 	canvas = createCanvas(windowX, windowY);
 	colorMode(HSB);
-	btn3 = createButton('Get data');
+	btn3 = createButton('Load');
 	btn3.position(10, mapHeight - 50);
 	btn3.mousePressed(getOverpassData);
 	btn4 = createButton('Stop');
@@ -60,6 +61,7 @@ function setup() {
 	chk1.changed(function(){showSteps = !showSteps;});
 	choosemapmode = true;
 	iterationsperframe = 1;
+	showMessage("Zoom to selected area, tap Load"); 
 }
 
 function draw() { //main loop called by the P5.js framework every frame
@@ -107,6 +109,7 @@ function draw() { //main loop called by the P5.js framework every frame
 }
 
 function getOverpassData() { //load nodes and edge map data in XML format from OpenStreetMap via the Overpass API
+	hideMessage();
 	canvas.position(0, 34); // start just below logo image
 	choosemapmode = false;
 	bestroute = null;
@@ -161,6 +164,7 @@ function getOverpassData() { //load nodes and edge map data in XML format from O
 			}
 		}
 		selectnodemode = true;
+		showMessage("Tap on start of route");
 	});
 }
 
@@ -297,4 +301,40 @@ function getNodebyId(id) {
 		}
 	}
 	return null;
+}
+
+function showMessage(msg) {
+	let xpos = 20;
+	msgbckDiv = createDiv('');
+	msgbckDiv.style('position','fixed'); 
+	msgbckDiv.style('width','400px'); 
+	msgbckDiv.style('top',xpos+45+'px'); 
+	msgbckDiv.style('left','50%'); 
+	msgbckDiv.style('background','black'); 
+	msgbckDiv.style('opacity','0.3'); 
+	msgbckDiv.style('-webkit-transform','translate(-50%, -50%)'); 
+	msgbckDiv.style('transform','translate(-50%, -50%)'); 
+	msgbckDiv.style('height','30px');
+	msgbckDiv.style('border-radius','10px');
+	msgDiv = createDiv('');
+	msgDiv.style('position','fixed'); 
+	msgDiv.style('width','400px'); 
+	msgDiv.style('top',xpos+50+'px'); 
+	msgDiv.style('left','50%'); 
+	msgDiv.style('color','white'); 
+	msgDiv.style('background','none'); 
+	msgDiv.style('opacity','1'); 
+	msgDiv.style('-webkit-transform','translate(-50%, -50%)'); 
+	msgDiv.style('transform','translate(-50%, -50%)'); 
+	msgDiv.style('font-family','Lucida Sans Unicode');  
+	msgDiv.style('font-size','20px');  
+	msgDiv.style('text-align','center');
+	msgDiv.style('vertical-align','middle');
+	msgDiv.style('height','50px');
+	msgDiv.html(msg);
+}
+
+function hideMessage(){
+	msgbckDiv.style('top',10000+'px'); 
+	msgDiv.style('top',10000+'px'); 
 }
