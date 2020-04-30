@@ -8,7 +8,7 @@ var openlayersmap = new ol.Map({
 	],
 	view: new ol.View({
 		center: ol.proj.fromLonLat([0.3192, 51.6297]),
-		zoom: 17.8
+		zoom: 15
 	})
 });
 
