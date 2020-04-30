@@ -42,6 +42,7 @@ var showSteps = false;
 var showRoads = true;
 var iterations, iterationsperframe;
 var msgbckDiv,msgDiv;
+var btnTLx, btnTLy, btnBRx, btnBRy; // button's top left and bottom right x and y coordinates.
 
 function setup() {
 	mapWidth = windowWidth;
@@ -50,18 +51,18 @@ function setup() {
 	windowY = mapHeight//; + 250;
 	canvas = createCanvas(windowX, windowY);
 	colorMode(HSB);
-	btn3 = createButton('Load');
-	btn3.position(10, mapHeight - 50);
-	btn3.mousePressed(getOverpassData);
-	btn4 = createButton('Stop');
-	btn4.position(200, mapHeight -50);
-	btn4.mousePressed(btnStop);
+	// btn3 = createButton('Load');
+	// btn3.position(10, mapHeight - 50);
+	// btn3.mousePressed(getOverpassData);
+	// btn4 = createButton('Stop');
+	// btn4.position(200, mapHeight -50);
+	// btn4.mousePressed(btnStop);
 	chk1 = createCheckbox('Show Steps', showSteps);
 	chk1.position(300, mapHeight -50);
 	chk1.changed(function(){showSteps = !showSteps;});
 	choosemapmode = true;
 	iterationsperframe = 1;
-	showMessage("Zoom to selected area, tap Load"); 
+	showMessage("Zoom to selected area, then tap here"); 
 }
 
 function draw() { //main loop called by the P5.js framework every frame
@@ -109,7 +110,7 @@ function draw() { //main loop called by the P5.js framework every frame
 }
 
 function getOverpassData() { //load nodes and edge map data in XML format from OpenStreetMap via the Overpass API
-	showMessage("Loading map data");
+	showMessage("Loading map data...");
 	canvas.position(0, 34); // start just below logo image
 	choosemapmode = false;
 	bestroute = null;
@@ -262,17 +263,20 @@ function solveRES() {
 }
 
 function mouseClicked() { // clicked on map to select a node
-	if (mouseY < mapHeight) { //clicked on map
-		hideMessage();
+	if (choosemapmode && mouseY < btnBRy && mouseY>btnTLy && mouseX > btnTLx && mouseX < btnBRx) { // Choose map mode and clicked on button
+		getOverpassData();
+	}
+	if (selectnodemode && mouseY < mapHeight) { // Select node mode, and clicked on map 
+		showMessage('Calculating... Tap to stop');
 		showNodes(); // recalculate closest node
 		selectnodemode = false;
 		solveRES();
 	}
-}
-
-function btnStop() {
-	solveRESmode = false;
-	solveLoopmode = false;
+	if (solveRESmode && mouseY < btnBRy && mouseY>btnTLy && mouseX > btnTLx && mouseX < btnBRx) { //Busy solving and clicked on button
+		solveRESmode = false;
+		solveLoopmode = false;
+		showMessage('Tap to download GPX route file');
+	}
 }
 
 function positionMap(minlon_, minlat_, maxlon_, maxlat_) {
@@ -306,11 +310,12 @@ function getNodebyId(id) {
 
 function showMessage(msg) {
 	if (msgDiv) {hideMessage();}
-	let xpos = 20;
+	let ypos = 20;
+	let btnwidth = 400;
 	msgbckDiv = createDiv('');
 	msgbckDiv.style('position','fixed'); 
-	msgbckDiv.style('width','400px'); 
-	msgbckDiv.style('top',xpos+45+'px'); 
+	msgbckDiv.style('width',btnwidth+'px'); 
+	msgbckDiv.style('top',ypos+45+'px'); 
 	msgbckDiv.style('left','50%'); 
 	msgbckDiv.style('background','black'); 
 	msgbckDiv.style('opacity','0.3'); 
@@ -320,8 +325,8 @@ function showMessage(msg) {
 	msgbckDiv.style('border-radius','10px');
 	msgDiv = createDiv('');
 	msgDiv.style('position','fixed'); 
-	msgDiv.style('width','400px'); 
-	msgDiv.style('top',xpos+55+'px'); 
+	msgDiv.style('width',btnwidth+'px'); 
+	msgDiv.style('top',ypos+55+'px'); 
 	msgDiv.style('left','50%'); 
 	msgDiv.style('color','white'); 
 	msgDiv.style('background','none'); 
@@ -334,6 +339,10 @@ function showMessage(msg) {
 	msgDiv.style('vertical-align','middle');
 	msgDiv.style('height','50px');
 	msgDiv.html(msg);
+	btnTLx=windowWidth/2-200; // area that is touch/click sensitive
+	btnTLy=ypos-4;
+	btnBRx=btnTLx+400;
+	btnBRy=btnTLy+32;
 }
 
 function hideMessage(){
