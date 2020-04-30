@@ -45,6 +45,12 @@ var msgbckDiv,msgDiv;
 var btnTLx, btnTLy, btnBRx, btnBRy; // button's top left and bottom right x and y coordinates.
 
 function setup() {
+	if (navigator.geolocation) { //if browser shares user GPS location, update map to center on it.
+		navigator.geolocation.getCurrentPosition(function(position){
+			console.log(position.coords.latitude);
+			openlayersmap.getView().setCenter(ol.proj.fromLonLat([position.coords.longitude,position.coords.latitude]));
+		});
+	}
 	mapWidth = windowWidth;
 	mapHeight = windowHeight;
 	windowX = windowWidth;
