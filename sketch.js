@@ -47,7 +47,6 @@ var btnTLx, btnTLy, btnBRx, btnBRy; // button's top left and bottom right x and 
 function setup() {
 	if (navigator.geolocation) { //if browser shares user GPS location, update map to center on it.
 		navigator.geolocation.getCurrentPosition(function(position){
-			console.log(position.coords.latitude);
 			openlayersmap.getView().setCenter(ol.proj.fromLonLat([position.coords.longitude,position.coords.latitude]));
 		});
 	}
@@ -268,7 +267,7 @@ function solveRES() {
 	iterationsperframe = 1;
 }
 
-function mouseClicked() { // clicked on map to select a node
+function mousePressed() { // clicked on map to select a node
 	if (choosemapmode && mouseY < btnBRy && mouseY>btnTLy && mouseX > btnTLx && mouseX < btnBRx) { // Choose map mode and clicked on button
 		getOverpassData();
 	}
