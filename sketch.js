@@ -8,7 +8,7 @@ var openlayersmap = new ol.Map({
 	],
 	view: new ol.View({
 		center: ol.proj.fromLonLat([0.3192, 51.6297]),
-		zoom: 15
+		zoom: 16
 	})
 });
 
@@ -41,39 +41,41 @@ var bestdoublingsup;
 var showSteps = false;
 var showRoads = true;
 var iterations, iterationsperframe;
-var msgbckDiv,msgDiv;
+var msgbckDiv, msgDiv;
+var margin;
 var btnTLx, btnTLy, btnBRx, btnBRy; // button's top left and bottom right x and y coordinates.
 
 function setup() {
 	if (navigator.geolocation) { //if browser shares user GPS location, update map to center on it.
-		navigator.geolocation.getCurrentPosition(function(position){
-			openlayersmap.getView().setCenter(ol.proj.fromLonLat([position.coords.longitude,position.coords.latitude]));
+		navigator.geolocation.getCurrentPosition(function (position) {
+			openlayersmap.getView().setCenter(ol.proj.fromLonLat([position.coords.longitude, position.coords.latitude]));
 		});
 	}
 	mapWidth = windowWidth;
 	mapHeight = windowHeight;
 	windowX = windowWidth;
-	windowY = mapHeight//; + 250;
+	windowY = mapHeight //; + 250;
 	canvas = createCanvas(windowX, windowY);
 	colorMode(HSB);
-	// btn3 = createButton('Load');
-	// btn3.position(10, mapHeight - 50);
-	// btn3.mousePressed(getOverpassData);
-	// btn4 = createButton('Stop');
-	// btn4.position(200, mapHeight -50);
-	// btn4.mousePressed(btnStop);
 	chk1 = createCheckbox('Show Steps', showSteps);
-	chk1.position(300, mapHeight -50);
-	chk1.changed(function(){showSteps = !showSteps;});
+	chk1.position(300, mapHeight - 50);
+	chk1.changed(function () {
+		showSteps = !showSteps;
+	});
 	choosemapmode = true;
 	iterationsperframe = 1;
-	showMessage("Zoom to selected area, then tap here"); 
+	margin = 0.1; // don't pull data in the extreme edges of the map
+	showMessage("Zoom to selected area, then tap here");
 }
 
 function draw() { //main loop called by the P5.js framework every frame
+	clear();
+	drawMask();//frame the active area on the map
 	if (!choosemapmode) {
-		clear();
-		if (showRoads) {showEdges();} //draw connections between nodes
+
+		if (showRoads) {
+			showEdges();
+		} //draw connections between nodes
 		if (solveRESmode) {
 			iterationsperframe = max(0.01, iterationsperframe - 1 * (5 - frameRate())); // dynamically adapt iterations per frame to hit 5fps
 			for (let it = 0; it < iterationsperframe; it++) {
@@ -82,7 +84,7 @@ function draw() { //main loop called by the P5.js framework every frame
 				while (!solutionfound) { //run randomly down least roads until all roads have been run
 					shuffle(currentnode.edges, true);
 					currentnode.edges.sort((a, b) => a.travels - b.travels); // sort edges around node by number of times traveled, and travel down least.
-					let edgewithleasttravels = currentnode.edges[0]; 
+					let edgewithleasttravels = currentnode.edges[0];
 					let nextNode = edgewithleasttravels.OtherNodeofEdge(currentnode);
 					edgewithleasttravels.travels++;
 					currentroute.addWaypoint(nextNode, edgewithleasttravels.distance);
@@ -123,11 +125,16 @@ function getOverpassData() { //load nodes and edge map data in XML format from O
 	mapminlat = extent[1];
 	mapminlon = extent[0];
 	mapmaxlat = extent[3];
-	mapmaxlon = extent[2];
+	mapmaxlon = extent[2]; //51.62354589659512,0.3054885475158691,51.635853268644496,0.33291145248413084
+	dataminlat = extent[1] + (extent[3] - extent[1]) * margin; //51.62662273960746,0.31234427375793455,51.63277642563215,0.3260557262420654
+	dataminlon = extent[0] + (extent[2] - extent[0]) * margin;
+	datamaxlat = extent[3] - (extent[3] - extent[1]) * margin;
+	datamaxlon = extent[2] - (extent[2] - extent[0]) * margin;
 	let OverpassURL = "https://overpass-api.de/api/interpreter?data=";
 	let overpassquery = "(way({{bbox}})['name']['highway']['highway' !~ 'path']['highway' !~ 'steps']['highway' !~ 'motorway']['highway' !~ 'motorway_link']['highway' !~ 'raceway']['highway' !~ 'bridleway']['highway' !~ 'proposed']['highway' !~ 'construction']['highway' !~ 'elevator']['highway' !~ 'bus_guideway']['highway' !~ 'footway']['highway' !~ 'cycleway']['highway' !~ 'trunk']['highway' !~ 'platform']['foot' !~ 'no']['service' !~ 'drive-through']['service' !~ 'parking_aisle']['access' !~ 'private']['access' !~ 'no'];node(w)({{bbox}}););out;";
-	overpassquery = overpassquery.replace("{{bbox}}", mapminlat + "," + mapminlon + "," + mapmaxlat + "," + mapmaxlon);
-	overpassquery = overpassquery.replace("{{bbox}}", mapminlat + "," + mapminlon + "," + mapmaxlat + "," + mapmaxlon);
+	overpassquery = overpassquery.replace("{{bbox}}", dataminlat + "," + dataminlon + "," + datamaxlat + "," + datamaxlon);
+	overpassquery = overpassquery.replace("{{bbox}}", dataminlat + "," + dataminlon + "," + datamaxlat + "," + datamaxlon);
+	console.log(mapminlat + "," + mapminlon + "," + mapmaxlat + "," + mapmaxlon);
 	OverpassURL = OverpassURL + encodeURI(overpassquery);
 	httpGet(OverpassURL, 'text', false, function (response) {
 		let OverpassResponse = response;
@@ -145,7 +152,7 @@ function getOverpassData() { //load nodes and edge map data in XML format from O
 			minlon = min(minlon, lon);
 			maxlon = max(maxlon, lon);
 		}
-		positionMap(minlon, minlat, maxlon, maxlat);
+		//positionMap(minlon, minlat, maxlon, maxlat);
 		nodes = [];
 		edges = [];
 		for (let i = 0; i < numnodes; i++) {
@@ -177,7 +184,9 @@ function getOverpassData() { //load nodes and edge map data in XML format from O
 function showNodes() {
 	let closestnodetomousedist = Infinity;
 	for (let i = 0; i < nodes.length; i++) {
-		if (showRoads) {nodes[i].show();}
+		if (showRoads) {
+			nodes[i].show();
+		}
 		disttoMouse = dist(nodes[i].x, nodes[i].y, mouseX, mouseY);
 		if (disttoMouse < closestnodetomousedist) {
 			closestnodetomousedist = disttoMouse;
@@ -192,21 +201,21 @@ function showNodes() {
 function showStatus() {
 	if (startnode != null) {
 		startnode.highlight();
-		let textx=150;
-		let texty=mapHeight-200;
+		let textx = 150;
+		let texty = mapHeight - 200;
 		fill(0, 5, 225);
 		noStroke();
 		textSize(12);
 		text("Total number nodes: " + nodes.length, 150, texty);
-		text("Total number road sections: " + edges.length, 150, texty+20);
+		text("Total number road sections: " + edges.length, 150, texty + 20);
 		if (bestroute != null) {
-			text("Length of roads: " + nf(totaledgedistance, 0, 3) + "km", 150, texty+40);
+			text("Length of roads: " + nf(totaledgedistance, 0, 3) + "km", 150, texty + 40);
 			if (bestroute.waypoints.length > 0) {
-				text("Best route: " + nf(bestroute.distance, 0, 3) + "km, doublings:" + bestdoublingsup + " distance home:" + nf(calcdistance(bestroute.waypoints[bestroute.waypoints.length - 1].lat, bestroute.waypoints[bestroute.waypoints.length - 1].lon, startnode.lat, startnode.lon), 0, 3), 150, texty+60);
+				text("Best route: " + nf(bestroute.distance, 0, 3) + "km, doublings:" + bestdoublingsup + " distance home:" + nf(calcdistance(bestroute.waypoints[bestroute.waypoints.length - 1].lat, bestroute.waypoints[bestroute.waypoints.length - 1].lon, startnode.lat, startnode.lon), 0, 3), 150, texty + 60);
 			}
-			text("Routes tried: " + iterations, 150, texty+80);
-			text("Frame rate: " + frameRate(), 150, texty+100);
-			text("Solutions per frame: " + iterationsperframe, 150, texty+120);
+			text("Routes tried: " + iterations, 150, texty + 80);
+			text("Frame rate: " + frameRate(), 150, texty + 100);
+			text("Solutions per frame: " + iterationsperframe, 150, texty + 120);
 		}
 	}
 }
@@ -258,7 +267,7 @@ function solveRES() {
 	removeOrphans();
 	solveRESmode = true;
 	selectnodemode = false;
-	showRoads=false;
+	showRoads = false;
 	remainingedges = edges.length;
 	currentroute = new Route(currentnode, null);
 	bestroute = new Route(currentnode, null);
@@ -268,7 +277,7 @@ function solveRES() {
 }
 
 function mousePressed() { // clicked on map to select a node
-	if (choosemapmode && mouseY < btnBRy && mouseY>btnTLy && mouseX > btnTLx && mouseX < btnBRx) { // Choose map mode and clicked on button
+	if (choosemapmode && mouseY < btnBRy && mouseY > btnTLy && mouseX > btnTLx && mouseX < btnBRx) { // Choose map mode and clicked on button
 		getOverpassData();
 	}
 	if (selectnodemode && mouseY < mapHeight) { // Select node mode, and clicked on map 
@@ -277,7 +286,7 @@ function mousePressed() { // clicked on map to select a node
 		selectnodemode = false;
 		solveRES();
 	}
-	if (solveRESmode && mouseY < btnBRy && mouseY>btnTLy && mouseX > btnTLx && mouseX < btnBRx) { //Busy solving and clicked on button
+	if (solveRESmode && mouseY < btnBRy && mouseY > btnTLy && mouseX > btnTLx && mouseX < btnBRx) { //Busy solving and clicked on button
 		solveRESmode = false;
 		solveLoopmode = false;
 		showMessage('Tap to download GPX route file');
@@ -314,43 +323,52 @@ function getNodebyId(id) {
 }
 
 function showMessage(msg) {
-	if (msgDiv) {hideMessage();}
+	if (msgDiv) {
+		hideMessage();
+	}
 	let ypos = 20;
 	let btnwidth = 400;
 	msgbckDiv = createDiv('');
-	msgbckDiv.style('position','fixed'); 
-	msgbckDiv.style('width',btnwidth+'px'); 
-	msgbckDiv.style('top',ypos+45+'px'); 
-	msgbckDiv.style('left','50%'); 
-	msgbckDiv.style('background','black'); 
-	msgbckDiv.style('opacity','0.3'); 
-	msgbckDiv.style('-webkit-transform','translate(-50%, -50%)'); 
-	msgbckDiv.style('transform','translate(-50%, -50%)'); 
-	msgbckDiv.style('height','30px');
-	msgbckDiv.style('border-radius','10px');
+	msgbckDiv.style('position', 'fixed');
+	msgbckDiv.style('width', btnwidth + 'px');
+	msgbckDiv.style('top', ypos + 45 + 'px');
+	msgbckDiv.style('left', '50%');
+	msgbckDiv.style('background', 'black');
+	msgbckDiv.style('opacity', '0.3');
+	msgbckDiv.style('-webkit-transform', 'translate(-50%, -50%)');
+	msgbckDiv.style('transform', 'translate(-50%, -50%)');
+	msgbckDiv.style('height', '30px');
+	msgbckDiv.style('border-radius', '10px');
 	msgDiv = createDiv('');
-	msgDiv.style('position','fixed'); 
-	msgDiv.style('width',btnwidth+'px'); 
-	msgDiv.style('top',ypos+55+'px'); 
-	msgDiv.style('left','50%'); 
-	msgDiv.style('color','white'); 
-	msgDiv.style('background','none'); 
-	msgDiv.style('opacity','1'); 
-	msgDiv.style('-webkit-transform','translate(-50%, -50%)'); 
-	msgDiv.style('transform','translate(-50%, -50%)'); 
-	msgDiv.style('font-family','Lucida Sans Unicode');  
-	msgDiv.style('font-size','20px');  
-	msgDiv.style('text-align','center');
-	msgDiv.style('vertical-align','middle');
-	msgDiv.style('height','50px');
+	msgDiv.style('position', 'fixed');
+	msgDiv.style('width', btnwidth + 'px');
+	msgDiv.style('top', ypos + 55 + 'px');
+	msgDiv.style('left', '50%');
+	msgDiv.style('color', 'white');
+	msgDiv.style('background', 'none');
+	msgDiv.style('opacity', '1');
+	msgDiv.style('-webkit-transform', 'translate(-50%, -50%)');
+	msgDiv.style('transform', 'translate(-50%, -50%)');
+	msgDiv.style('font-family', 'Lucida Sans Unicode');
+	msgDiv.style('font-size', '20px');
+	msgDiv.style('text-align', 'center');
+	msgDiv.style('vertical-align', 'middle');
+	msgDiv.style('height', '50px');
 	msgDiv.html(msg);
-	btnTLx=windowWidth/2-200; // area that is touch/click sensitive
-	btnTLy=ypos-4;
-	btnBRx=btnTLx+400;
-	btnBRy=btnTLy+32;
+	btnTLx = windowWidth / 2 - 200; // area that is touch/click sensitive
+	btnTLy = ypos - 4;
+	btnBRx = btnTLx + 400;
+	btnBRy = btnTLy + 32;
 }
 
-function hideMessage(){
+function hideMessage() {
 	msgbckDiv.remove();
 	msgDiv.remove();
+}
+
+function drawMask(){
+	noFill();
+	stroke(0, 000, 255, 0.4);
+	strokeWeight(0.5);
+	rect(windowWidth*margin, windowHeight*margin, windowWidth*(1-2*margin), windowHeight*(1-2*margin));
 }
