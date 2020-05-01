@@ -29,9 +29,11 @@ var mapminlat, mapminlon, mapmaxlat, mapmaxlon;
 var totaledgedistance = 0;
 var closestnodetomouse = -1;
 var startnode, currentnode;
-var selectnodemode = false,
-	solveRESmode = false,
-	choosemapmode = false;
+var selectnodemode = 1,
+	solveRESmode = 2,
+	choosemapmode = 3,
+	trimmode = 4;
+var mode;
 var remainingedges;
 var debugsteps = 0;
 var bestdistance;
@@ -62,7 +64,7 @@ function setup() {
 	chk1.changed(function () {
 		showSteps = !showSteps;
 	});
-	choosemapmode = true;
+	mode=choosemapmode;
 	iterationsperframe = 1;
 	margin = 0.1; // don't pull data in the extreme edges of the map
 	showMessage("Zoom to selected area, then tap here");
@@ -70,13 +72,12 @@ function setup() {
 
 function draw() { //main loop called by the P5.js framework every frame
 	clear();
-	drawMask();//frame the active area on the map
-	if (!choosemapmode) {
-
+	drawMask(); //frame the active area on the map
+	if (!mode==choosemapmode) {
 		if (showRoads) {
-			showEdges();
-		} //draw connections between nodes
-		if (solveRESmode) {
+			showEdges();//draw connections between nodes
+		} 
+		if (mode==solveRESmode) {
 			iterationsperframe = max(0.01, iterationsperframe - 1 * (5 - frameRate())); // dynamically adapt iterations per frame to hit 5fps
 			for (let it = 0; it < iterationsperframe; it++) {
 				iterations++;
@@ -176,7 +177,7 @@ function getOverpassData() { //load nodes and edge map data in XML format from O
 				}
 			}
 		}
-		selectnodemode = true;
+		mode=selectnodemode;
 		showMessage("Tap on start of route");
 	});
 }
@@ -193,7 +194,7 @@ function showNodes() {
 			closestnodetomouse = i;
 		}
 	}
-	if (selectnodemode) {
+	if (mode==selectnodemode) {
 		startnode = nodes[closestnodetomouse]; // highlight the node that's closest to the mouse pointer
 	}
 }
@@ -265,8 +266,7 @@ function floodfill(node, stepssofar) {
 
 function solveRES() {
 	removeOrphans();
-	solveRESmode = true;
-	selectnodemode = false;
+	mode=solveRESmode;
 	showRoads = false;
 	remainingedges = edges.length;
 	currentroute = new Route(currentnode, null);
@@ -277,16 +277,16 @@ function solveRES() {
 }
 
 function mousePressed() { // clicked on map to select a node
-	if (choosemapmode && mouseY < btnBRy && mouseY > btnTLy && mouseX > btnTLx && mouseX < btnBRx) { // Choose map mode and clicked on button
+	if (mode==choosemapmode && mouseY < btnBRy && mouseY > btnTLy && mouseX > btnTLx && mouseX < btnBRx) { // Choose map mode and clicked on button
 		getOverpassData();
 	}
-	if (selectnodemode && mouseY < mapHeight) { // Select node mode, and clicked on map 
+	if (mode==selectnodemode && mouseY < mapHeight) { // Select node mode, and clicked on map 
 		showMessage('Calculating... Tap to stop');
 		showNodes(); // recalculate closest node
 		selectnodemode = false;
 		solveRES();
 	}
-	if (solveRESmode && mouseY < btnBRy && mouseY > btnTLy && mouseX > btnTLx && mouseX < btnBRx) { //Busy solving and clicked on button
+	if (mode==solveRESmode && mouseY < btnBRy && mouseY > btnTLy && mouseX > btnTLx && mouseX < btnBRx) { //Busy solving and clicked on button
 		solveRESmode = false;
 		solveLoopmode = false;
 		showMessage('Tap to download GPX route file');
@@ -366,9 +366,9 @@ function hideMessage() {
 	msgDiv.remove();
 }
 
-function drawMask(){
+function drawMask() {
 	noFill();
 	stroke(0, 000, 255, 0.4);
 	strokeWeight(0.5);
-	rect(windowWidth*margin, windowHeight*margin, windowWidth*(1-2*margin), windowHeight*(1-2*margin));
+	rect(windowWidth * margin, windowHeight * margin, windowWidth * (1 - 2 * margin), windowHeight * (1 - 2 * margin));
 }
