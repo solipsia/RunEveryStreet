@@ -20,6 +20,14 @@ class Edge { //section of road that connects nodes
 		noStroke();
 	}
 
+	highlight() {
+		strokeWeight(4);
+		stroke(20, 255, 255, 1);
+		line(this.from.x, this.from.y, this.to.x, this.to.y);
+		fill(0);
+		noStroke();
+	}
+
 	OtherNodeofEdge(node) {
 		if (node == this.from) {
 			return this.to;
@@ -27,4 +35,10 @@ class Edge { //section of road that connects nodes
 			return this.from;
 		}
 	}
+
+	distanceToPoint(x,y) {  //distance from middle of this edge to give point
+		return(dist(x,y,(this.to.x+this.from.x)/2,(this.to.y+this.from.y)/2));
+	}
+
+
 }

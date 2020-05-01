@@ -28,11 +28,13 @@ var nodes = [],
 var mapminlat, mapminlon, mapmaxlat, mapmaxlon;
 var totaledgedistance = 0;
 var closestnodetomouse = -1;
+var closestedgetomouse = -1;
 var startnode, currentnode;
 var selectnodemode = 1,
 	solveRESmode = 2,
 	choosemapmode = 3,
-	trimmode = 4;
+	trimmode = 4,
+	downloadGPXmode = 5;
 var mode;
 var remainingedges;
 var debugsteps = 0;
@@ -64,7 +66,7 @@ function setup() {
 	chk1.changed(function () {
 		showSteps = !showSteps;
 	});
-	mode=choosemapmode;
+	mode = choosemapmode;
 	iterationsperframe = 1;
 	margin = 0.1; // don't pull data in the extreme edges of the map
 	showMessage("Zoom to selected area, then tap here");
@@ -73,11 +75,11 @@ function setup() {
 function draw() { //main loop called by the P5.js framework every frame
 	clear();
 	drawMask(); //frame the active area on the map
-	if (!mode==choosemapmode) {
+	if (mode != choosemapmode) {
 		if (showRoads) {
-			showEdges();//draw connections between nodes
-		} 
-		if (mode==solveRESmode) {
+			showEdges(); //draw connections between nodes
+		}
+		if (mode == solveRESmode) {
 			iterationsperframe = max(0.01, iterationsperframe - 1 * (5 - frameRate())); // dynamically adapt iterations per frame to hit 5fps
 			for (let it = 0; it < iterationsperframe; it++) {
 				iterations++;
@@ -177,7 +179,7 @@ function getOverpassData() { //load nodes and edge map data in XML format from O
 				}
 			}
 		}
-		mode=selectnodemode;
+		mode = selectnodemode;
 		showMessage("Tap on start of route");
 	});
 }
@@ -188,15 +190,35 @@ function showNodes() {
 		if (showRoads) {
 			nodes[i].show();
 		}
-		disttoMouse = dist(nodes[i].x, nodes[i].y, mouseX, mouseY);
-		if (disttoMouse < closestnodetomousedist) {
-			closestnodetomousedist = disttoMouse;
-			closestnodetomouse = i;
+		if (mode == selectnodemode) {
+			disttoMouse = dist(nodes[i].x, nodes[i].y, mouseX, mouseY);
+			if (disttoMouse < closestnodetomousedist) {
+				closestnodetomousedist = disttoMouse;
+				closestnodetomouse = i;
+			}
 		}
 	}
-	if (mode==selectnodemode) {
-		startnode = nodes[closestnodetomouse]; // highlight the node that's closest to the mouse pointer
+	if (mode == selectnodemode) {
+		startnode = nodes[closestnodetomouse];
 	}
+}
+
+function showEdges() {
+	let closestedgetomousedist = Infinity;
+	for (let i = 0; i < edges.length; i++) {
+		edges[i].show();
+		if (mode == trimmode) {
+			let dist = edges[i].distanceToPoint(mouseX, mouseY)
+			if (dist < closestedgetomousedist) {
+				closestedgetomousedist = dist;
+				closestedgetomouse = i;
+			}
+		}
+	}
+	if (closestedgetomouse >= 0) {
+		edges[closestedgetomouse].highlight();
+	}
+
 }
 
 function showStatus() {
@@ -221,11 +243,7 @@ function showStatus() {
 	}
 }
 
-function showEdges() {
-	for (let i = 0; i < edges.length; i++) {
-		edges[i].show();
-	}
-}
+
 
 function resetEdges() {
 	for (let i = 0; i < edges.length; i++) {
@@ -266,7 +284,6 @@ function floodfill(node, stepssofar) {
 
 function solveRES() {
 	removeOrphans();
-	mode=solveRESmode;
 	showRoads = false;
 	remainingedges = edges.length;
 	currentroute = new Route(currentnode, null);
@@ -277,19 +294,31 @@ function solveRES() {
 }
 
 function mousePressed() { // clicked on map to select a node
-	if (mode==choosemapmode && mouseY < btnBRy && mouseY > btnTLy && mouseX > btnTLx && mouseX < btnBRx) { // Choose map mode and clicked on button
+	if (mode == choosemapmode && mouseY < btnBRy && mouseY > btnTLy && mouseX > btnTLx && mouseX < btnBRx) { // Choose map mode and clicked on button
 		getOverpassData();
+		return;
 	}
-	if (mode==selectnodemode && mouseY < mapHeight) { // Select node mode, and clicked on map 
-		showMessage('Calculating... Tap to stop');
-		showNodes(); // recalculate closest node
-		selectnodemode = false;
-		solveRES();
+	if (mode == selectnodemode && mouseY < mapHeight) { // Select node mode, and clicked on map 
+		mode = trimmode;
+		showMessage('Tap on roads to trim, then tap here');
+		removeOrphans(); // deletes parts of the network that cannot be reached from start
+		return;
 	}
-	if (mode==solveRESmode && mouseY < btnBRy && mouseY > btnTLy && mouseX > btnTLx && mouseX < btnBRx) { //Busy solving and clicked on button
-		solveRESmode = false;
-		solveLoopmode = false;
+	if (mode == trimmode) {
+		if (mouseY < btnBRy && mouseY > btnTLy && mouseX > btnTLx && mouseX < btnBRx) { // clicked on button
+			mode = solveRESmode;
+			showMessage('Calculating... Tap to stop');
+			showNodes(); // recalculate closest node
+			solveRES();
+			return;
+		} else { // clicked on edge to remove it
+			trimSelectedEdge();
+		}
+	}
+	if (mode == solveRESmode && mouseY < btnBRy && mouseY > btnTLy && mouseX > btnTLx && mouseX < btnBRx) { //Busy solving and clicked on button
+		mode = downloadGPXmode;
 		showMessage('Tap to download GPX route file');
+		return;
 	}
 }
 
@@ -371,4 +400,19 @@ function drawMask() {
 	stroke(0, 000, 255, 0.4);
 	strokeWeight(0.5);
 	rect(windowWidth * margin, windowHeight * margin, windowWidth * (1 - 2 * margin), windowHeight * (1 - 2 * margin));
+}
+
+function trimSelectedEdge() {
+	if (closestedgetomouse >= 0) {
+		console.log('edges before trim', edges.length);
+		let edgetodelete=edges[closestedgetomouse];
+		edges.splice(edges.findIndex((element) => element == edgetodelete),1);
+		for (let i = 0;i<nodes.length;i++){ // remove references to the deleted edge from within each of the nodes
+			if (nodes[i].edges.includes(edgetodelete)) {
+				nodes[i].edges.splice(nodes[i].edges.findIndex((element) => element == edgetodelete),1);
+			}
+		}
+		removeOrphans(); // deletes parts of the network that no longer can be reached.
+		closestedgetomouse = -1;
+	}
 }
