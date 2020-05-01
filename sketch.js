@@ -48,6 +48,7 @@ var iterations, iterationsperframe;
 var msgbckDiv, msgDiv;
 var margin;
 var btnTLx, btnTLy, btnBRx, btnBRy; // button's top left and bottom right x and y coordinates.
+var starttime;
 
 function setup() {
 	if (navigator.geolocation) { //if browser shares user GPS location, update map to center on it.
@@ -134,7 +135,9 @@ function getOverpassData() { //load nodes and edge map data in XML format from O
 	datamaxlat = extent[3] - (extent[3] - extent[1]) * margin;
 	datamaxlon = extent[2] - (extent[2] - extent[0]) * margin;
 	let OverpassURL = "https://overpass-api.de/api/interpreter?data=";
-	let overpassquery = "(way({{bbox}})['name']['highway']['highway' !~ 'path']['highway' !~ 'steps']['highway' !~ 'motorway']['highway' !~ 'motorway_link']['highway' !~ 'raceway']['highway' !~ 'bridleway']['highway' !~ 'proposed']['highway' !~ 'construction']['highway' !~ 'elevator']['highway' !~ 'bus_guideway']['highway' !~ 'footway']['highway' !~ 'cycleway']['highway' !~ 'trunk']['highway' !~ 'platform']['foot' !~ 'no']['service' !~ 'drive-through']['service' !~ 'parking_aisle']['access' !~ 'private']['access' !~ 'no'];node(w)({{bbox}}););out;";
+	//let overpassquery = "(way({{bbox}})['name']['highway']['highway' !~ 'path']['highway' !~ 'steps']['highway' !~ 'motorway']['highway' !~ 'motorway_link']['highway' !~ 'raceway']['highway' !~ 'bridleway']['highway' !~ 'proposed']['highway' !~ 'construction']['highway' !~ 'elevator']['highway' !~ 'bus_guideway']['highway' !~ 'footway']['highway' !~ 'cycleway']['highway' !~ 'trunk']['highway' !~ 'platform']['foot' !~ 'no']['service' !~ 'drive-through']['service' !~ 'parking_aisle']['access' !~ 'private']['access' !~ 'no'];node(w)({{bbox}}););out;";
+	let overpassquery = "(way({{bbox}})['highway']['highway' !~ 'motorway']['highway' !~ 'motorway_link']['highway' !~ 'raceway']['highway' !~ 'proposed']['highway' !~ 'construction']['highway' !~ 'elevator']['highway' !~ 'bus_guideway']['highway' !~ 'trunk']['highway' !~ 'platform']['foot' !~ 'no']['service' !~ 'drive-through']['service' !~ 'parking_aisle']['access' !~ 'private']['access' !~ 'no'];node(w)({{bbox}}););out;";
+	
 	overpassquery = overpassquery.replace("{{bbox}}", dataminlat + "," + dataminlon + "," + datamaxlat + "," + datamaxlon);
 	overpassquery = overpassquery.replace("{{bbox}}", dataminlat + "," + dataminlon + "," + datamaxlat + "," + datamaxlon);
 	console.log(mapminlat + "," + mapminlon + "," + mapmaxlat + "," + mapmaxlon);
@@ -201,6 +204,9 @@ function showNodes() {
 	if (mode == selectnodemode) {
 		startnode = nodes[closestnodetomouse];
 	}
+	if (startnode != null) {
+		startnode.highlight();
+	}
 }
 
 function showEdges() {
@@ -223,7 +229,6 @@ function showEdges() {
 
 function showStatus() {
 	if (startnode != null) {
-		startnode.highlight();
 		let textx = 150;
 		let texty = mapHeight - 200;
 		fill(0, 5, 225);
@@ -239,6 +244,7 @@ function showStatus() {
 			text("Routes tried: " + iterations, 150, texty + 80);
 			text("Frame rate: " + frameRate(), 150, texty + 100);
 			text("Solutions per frame: " + iterationsperframe, 150, texty + 120);
+			text("Iterations/second: " + iterations/(millis()-starttime)*1000, 150, texty + 140);
 		}
 	}
 }
@@ -291,6 +297,7 @@ function solveRES() {
 	bestdistance = Infinity;
 	iterations = 0;
 	iterationsperframe = 1;
+	starttime = millis();
 }
 
 function mousePressed() { // clicked on map to select a node
