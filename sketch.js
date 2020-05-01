@@ -367,7 +367,7 @@ function showMessage(msg) {
 	msgbckDiv.style('-webkit-transform', 'translate(-50%, -50%)');
 	msgbckDiv.style('transform', 'translate(-50%, -50%)');
 	msgbckDiv.style('height', '30px');
-	msgbckDiv.style('border-radius', '10px');
+	msgbckDiv.style('border-radius', '7px');
 	msgDiv = createDiv('');
 	msgDiv.style('position', 'fixed');
 	msgDiv.style('width', btnwidth + 'px');
