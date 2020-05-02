@@ -49,6 +49,8 @@ var msgbckDiv, msgDiv;
 var margin;
 var btnTLx, btnTLy, btnBRx, btnBRy; // button's top left and bottom right x and y coordinates.
 var starttime;
+var efficiencyhistory = [];
+var totalefficiencygains = 0;
 
 function setup() {
 	if (navigator.geolocation) { //if browser shares user GPS location, update map to center on it.
@@ -63,7 +65,7 @@ function setup() {
 	canvas = createCanvas(windowX, windowY);
 	colorMode(HSB);
 	chk1 = createCheckbox('Show Steps', showSteps);
-	chk1.position(300, mapHeight - 50);
+	chk1.position(300, mapHeight - 250);
 	chk1.changed(function () {
 		showSteps = !showSteps;
 	});
@@ -81,6 +83,7 @@ function draw() { //main loop called by the P5.js framework every frame
 			showEdges(); //draw connections between nodes
 		}
 		if (mode == solveRESmode) {
+			drawProgressGraph();
 			iterationsperframe = max(0.01, iterationsperframe - 1 * (5 - frameRate())); // dynamically adapt iterations per frame to hit 5fps
 			for (let it = 0; it < iterationsperframe; it++) {
 				iterations++;
@@ -103,6 +106,12 @@ function draw() { //main loop called by the P5.js framework every frame
 							bestroute = new Route(null, currentroute);
 							//bestroute.exportGPX();
 							bestdistance = currentroute.distance;
+							
+							if (efficiencyhistory.length > 1) {
+								totalefficiencygains += totaledgedistance / bestroute.distance - efficiencyhistory[efficiencyhistory.length-1];
+							}
+							efficiencyhistory.push(totaledgedistance / bestroute.distance);
+
 						}
 						currentnode = startnode;
 						remainingedges = edges.length;
@@ -113,10 +122,11 @@ function draw() { //main loop called by the P5.js framework every frame
 			}
 		}
 		showNodes();
-		showStatus();
+
 		if (bestroute != null) {
 			bestroute.show();
 		}
+		showStatus();
 	}
 }
 
@@ -137,7 +147,7 @@ function getOverpassData() { //load nodes and edge map data in XML format from O
 	let OverpassURL = "https://overpass-api.de/api/interpreter?data=";
 	//let overpassquery = "(way({{bbox}})['name']['highway']['highway' !~ 'path']['highway' !~ 'steps']['highway' !~ 'motorway']['highway' !~ 'motorway_link']['highway' !~ 'raceway']['highway' !~ 'bridleway']['highway' !~ 'proposed']['highway' !~ 'construction']['highway' !~ 'elevator']['highway' !~ 'bus_guideway']['highway' !~ 'footway']['highway' !~ 'cycleway']['highway' !~ 'trunk']['highway' !~ 'platform']['foot' !~ 'no']['service' !~ 'drive-through']['service' !~ 'parking_aisle']['access' !~ 'private']['access' !~ 'no'];node(w)({{bbox}}););out;";
 	let overpassquery = "(way({{bbox}})['highway']['highway' !~ 'motorway']['highway' !~ 'motorway_link']['highway' !~ 'raceway']['highway' !~ 'proposed']['highway' !~ 'construction']['highway' !~ 'elevator']['highway' !~ 'bus_guideway']['highway' !~ 'trunk']['highway' !~ 'platform']['foot' !~ 'no']['service' !~ 'drive-through']['service' !~ 'parking_aisle']['access' !~ 'private']['access' !~ 'no'];node(w)({{bbox}}););out;";
-	
+
 	overpassquery = overpassquery.replace("{{bbox}}", dataminlat + "," + dataminlon + "," + datamaxlat + "," + datamaxlon);
 	overpassquery = overpassquery.replace("{{bbox}}", dataminlat + "," + dataminlon + "," + datamaxlat + "," + datamaxlon);
 	console.log(mapminlat + "," + mapminlon + "," + mapmaxlat + "," + mapmaxlon);
@@ -229,22 +239,24 @@ function showEdges() {
 
 function showStatus() {
 	if (startnode != null) {
-		let textx = 150;
-		let texty = mapHeight - 200;
+		let textx = 2;
+		let texty = mapHeight - 400;
 		fill(0, 5, 225);
 		noStroke();
 		textSize(12);
-		text("Total number nodes: " + nodes.length, 150, texty);
-		text("Total number road sections: " + edges.length, 150, texty + 20);
+		text("Total number nodes: " + nodes.length, textx, texty);
+		text("Total number road sections: " + edges.length, textx, texty + 20);
+		text("Length of roads: " + nf(totaledgedistance, 0, 3) + "km", textx, texty + 40);
 		if (bestroute != null) {
-			text("Length of roads: " + nf(totaledgedistance, 0, 3) + "km", 150, texty + 40);
 			if (bestroute.waypoints.length > 0) {
-				text("Best route: " + nf(bestroute.distance, 0, 3) + "km, doublings:" + bestdoublingsup + " distance home:" + nf(calcdistance(bestroute.waypoints[bestroute.waypoints.length - 1].lat, bestroute.waypoints[bestroute.waypoints.length - 1].lon, startnode.lat, startnode.lon), 0, 3), 150, texty + 60);
+				text("Best route: " + nf(bestroute.distance, 0, 3) + "km, " + nf(100 * totaledgedistance / bestroute.distance, 0, 2) + "%", textx, texty + 60);
 			}
-			text("Routes tried: " + iterations, 150, texty + 80);
-			text("Frame rate: " + frameRate(), 150, texty + 100);
-			text("Solutions per frame: " + iterationsperframe, 150, texty + 120);
-			text("Iterations/second: " + iterations/(millis()-starttime)*1000, 150, texty + 140);
+			text("Routes tried: " + iterations, textx, texty + 80);
+			text("Frame rate: " + frameRate(), textx, texty + 100);
+			text("Solutions per frame: " + iterationsperframe, textx, texty + 120);
+			text("Iterations/second: " + iterations / (millis() - starttime) * 1000, textx, texty + 140);
+			text("best routes: " + efficiencyhistory.length, textx, texty + 160);
+			text("efficiency gains: " + nf(100*totalefficiencygains, 0, 2) + "% and " + nf(100 * totalefficiencygains / (millis() - starttime) * 1000, 0, 2) + "% gains/sec:", textx, texty + 180);
 		}
 	}
 }
@@ -263,9 +275,11 @@ function removeOrphans() { // remove unreachable nodes and edges
 	floodfill(currentnode, 1); // recursively walk every unwalked route until all connected nodes have been reached at least once, then remove unwalked ones.
 	let newedges = [];
 	let newnodes = [];
+	totaledgedistance = 0;
 	for (let i = 0; i < edges.length; i++) {
 		if (edges[i].travels > 0) {
 			newedges.push(edges[i]);
+			totaledgedistance += edges[i].distance;
 			if (!newnodes.includes(edges[i].from)) {
 				newnodes.push(edges[i].from);
 			}
@@ -412,14 +426,32 @@ function drawMask() {
 function trimSelectedEdge() {
 	if (closestedgetomouse >= 0) {
 		console.log('edges before trim', edges.length);
-		let edgetodelete=edges[closestedgetomouse];
-		edges.splice(edges.findIndex((element) => element == edgetodelete),1);
-		for (let i = 0;i<nodes.length;i++){ // remove references to the deleted edge from within each of the nodes
+		let edgetodelete = edges[closestedgetomouse];
+		edges.splice(edges.findIndex((element) => element == edgetodelete), 1);
+		for (let i = 0; i < nodes.length; i++) { // remove references to the deleted edge from within each of the nodes
 			if (nodes[i].edges.includes(edgetodelete)) {
-				nodes[i].edges.splice(nodes[i].edges.findIndex((element) => element == edgetodelete),1);
+				nodes[i].edges.splice(nodes[i].edges.findIndex((element) => element == edgetodelete), 1);
 			}
 		}
 		removeOrphans(); // deletes parts of the network that no longer can be reached.
 		closestedgetomouse = -1;
+	}
+}
+
+function drawProgressGraph() {
+	if (efficiencyhistory.length > 0) {
+		noStroke();
+		fill(0, 0, 0, 0.5);
+		let graphHeight = 150;
+		rect(0, windowHeight - graphHeight, windowWidth, graphHeight);
+		for (let i = 0; i < efficiencyhistory.length; i++) {
+			fill(i * 128 / efficiencyhistory.length, 255, 255, 0.5);
+			//rect(0,windowHeight,graphHeight-graphHeight*efficiencyhistory[i],i*200,graphHeight*efficiencyhistory[i]); //graphHeight*efficiencyhistory[i]
+			rect(map(i, 0, efficiencyhistory.length, 0, windowWidth), windowHeight - graphHeight * efficiencyhistory[i] - 34, windowWidth / efficiencyhistory.length, graphHeight * efficiencyhistory[i]);
+			if (i == 0) {
+				console.log(map(i, 0, efficiencyhistory.length, 0, windowWidth), windowHeight - graphHeight * efficiencyhistory[i] - 34, windowWidth / efficiencyhistory.length, graphHeight * efficiencyhistory[i]);
+			}
+
+		}
 	}
 }
