@@ -65,11 +65,9 @@ function setup() {
 	windowY = mapHeight //; + 250;
 	canvas = createCanvas(windowX, windowY-34);
 	colorMode(HSB);
-	// c
-	
 	mode = choosemapmode;
 	iterationsperframe = 1;
-	margin = 0.1; // don't pull data in the extreme edges of the map
+	margin = 0.07; // don't pull data in the extreme edges of the map
 	showMessage("Zoom to selected area, then tap here");
 }
 
