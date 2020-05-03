@@ -132,8 +132,7 @@ function draw() { //main loop called by the P5.js framework every frame
 
 function getOverpassData() { //load nodes and edge map data in XML format from OpenStreetMap via the Overpass API
 	showMessage("Loading map data...");
-	canvas.position(0, 34); // start just below logo image
-	choosemapmode = false;
+	canvas.position(0, 34); // start canvas just below logo image
 	bestroute = null;
 	var extent = ol.proj.transformExtent(openlayersmap.getView().calculateExtent(openlayersmap.getSize()), 'EPSG:3857', 'EPSG:4326'); //get the coordinates current view on the map
 	mapminlat = extent[1];
@@ -168,7 +167,6 @@ function getOverpassData() { //load nodes and edge map data in XML format from O
 			minlon = min(minlon, lon);
 			maxlon = max(maxlon, lon);
 		}
-		//positionMap(minlon, minlat, maxlon, maxlat);
 		nodes = [];
 		edges = [];
 		for (let i = 0; i < numnodes; i++) {
@@ -316,11 +314,12 @@ function solveRES() {
 }
 
 function mousePressed() { // clicked on map to select a node
-	if (mode == choosemapmode && mouseY < btnBRy && mouseY > btnTLy && mouseX > btnTLx && mouseX < btnBRx) { // Choose map mode and clicked on button
+	if (mode == choosemapmode && mouseY < btnBRy && mouseY > btnTLy && mouseX > btnTLx && mouseX < btnBRx) { // Was in Choose map mode and clicked on button
 		getOverpassData();
 		return;
 	}
 	if (mode == selectnodemode && mouseY < mapHeight) { // Select node mode, and clicked on map 
+		showNodes(); //find node closest to mouse
 		mode = trimmode;
 		showMessage('Tap on roads to trim, then tap here');
 		removeOrphans(); // deletes parts of the network that cannot be reached from start
@@ -452,14 +451,14 @@ function drawProgressGraph() {
 		text("Efficiency Progress",0,height - graphHeight+18);
 		textAlign(CENTER);
 		noStroke();
-		textSize(14);
+		textSize(12);
 		for (let i = 0; i < efficiencyhistory.length; i++) {
 			fill(i * 128 / efficiencyhistory.length, 255, 255, 0.5);
 			let startx=map(i, 0, efficiencyhistory.length, 0, windowWidth);
 			let starty=height - graphHeight * efficiencyhistory[i];
 			rect(startx, starty, windowWidth / efficiencyhistory.length, graphHeight * efficiencyhistory[i]);
 			fill(0, 5, 225);
-			text(nf(efficiencyhistory[i]*100,0,1)+"%",startx+windowWidth / efficiencyhistory.length/2, starty+graphHeight * efficiencyhistory[i]/2);
+			text(nf(efficiencyhistory[i]*100,0,0)+"%",startx+windowWidth / efficiencyhistory.length/2, starty+graphHeight * efficiencyhistory[i]/2);
 		}
 	}
 }
