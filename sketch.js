@@ -62,7 +62,7 @@ function setup() {
 	mapHeight = windowHeight;
 	windowX = windowWidth;
 	windowY = mapHeight //; + 250;
-	canvas = createCanvas(windowX, windowY);
+	canvas = createCanvas(windowX, windowY-34);
 	colorMode(HSB);
 	chk1 = createCheckbox('Show Steps', showSteps);
 	chk1.position(300, mapHeight - 250);
@@ -244,6 +244,7 @@ function showStatus() {
 		fill(0, 5, 225);
 		noStroke();
 		textSize(12);
+		textAlign(LEFT);
 		text("Total number nodes: " + nodes.length, textx, texty);
 		text("Total number road sections: " + edges.length, textx, texty + 20);
 		text("Length of roads: " + nf(totaledgedistance, 0, 3) + "km", textx, texty + 40);
@@ -442,16 +443,23 @@ function drawProgressGraph() {
 	if (efficiencyhistory.length > 0) {
 		noStroke();
 		fill(0, 0, 0, 0.5);
-		let graphHeight = 150;
-		rect(0, windowHeight - graphHeight, windowWidth, graphHeight);
+		let graphHeight = 100;
+		stroke(255,0,255,1);
+		rect(0, height - graphHeight, windowWidth, graphHeight);
+		fill(0, 5, 225);
+		textAlign(LEFT);
+		textSize(18);
+		text("Efficiency Progress",0,height - graphHeight+18);
+		textAlign(CENTER);
+		noStroke();
+		textSize(14);
 		for (let i = 0; i < efficiencyhistory.length; i++) {
 			fill(i * 128 / efficiencyhistory.length, 255, 255, 0.5);
-			//rect(0,windowHeight,graphHeight-graphHeight*efficiencyhistory[i],i*200,graphHeight*efficiencyhistory[i]); //graphHeight*efficiencyhistory[i]
-			rect(map(i, 0, efficiencyhistory.length, 0, windowWidth), windowHeight - graphHeight * efficiencyhistory[i] - 34, windowWidth / efficiencyhistory.length, graphHeight * efficiencyhistory[i]);
-			if (i == 0) {
-				console.log(map(i, 0, efficiencyhistory.length, 0, windowWidth), windowHeight - graphHeight * efficiencyhistory[i] - 34, windowWidth / efficiencyhistory.length, graphHeight * efficiencyhistory[i]);
-			}
-
+			let startx=map(i, 0, efficiencyhistory.length, 0, windowWidth);
+			let starty=height - graphHeight * efficiencyhistory[i];
+			rect(startx, starty, windowWidth / efficiencyhistory.length, graphHeight * efficiencyhistory[i]);
+			fill(0, 5, 225);
+			text(nf(efficiencyhistory[i]*100,0,1)+"%",startx+windowWidth / efficiencyhistory.length/2, starty+graphHeight * efficiencyhistory[i]/2);
 		}
 	}
 }

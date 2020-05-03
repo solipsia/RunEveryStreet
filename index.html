@@ -33,7 +33,7 @@
 		a:hover {
 		color: white;
 		background-color: transparent;
-		text-decoration: none;
+		text-decoration: underline;
 		}
 
 		a:active {
@@ -52,7 +52,13 @@
 	</style>
 </head>
 <body style="background-color:black;">
-	<div style="background-color:#380702;""><img src="assets/logosmalllit.png" /><span style="float:right;"><a href=".">restart&nbsp&nbsp&nbsp;</a></span></div>
+	<div style="background-color:#380702;""><img src="assets/logosmalllit.png" /></div>
+	<div style="position:fixed;width:120px;top:30px;right:0px;color:white;background:none;opacity:1;-webkit-transform:translate(-50%, -50%);transform:translate(-50%, -50%);font-family:Lucida Sans Unicode;font-size:13px;text-align:center;vertical-align:middle;height:50px;">
+		<a href="https://github.com/solipsia/RunEveryStreet">source code</a>
+	</div>
+	<div style="position:fixed;width:40px;top:30px;right:0px;color:white;background:none;opacity:1;-webkit-transform:translate(-50%, -50%);transform:translate(-50%, -50%);font-family:Lucida Sans Unicode;font-size:13px;text-align:center;vertical-align:middle;height:50px;">
+		<a href=".">restart</a>
+	</div>
 	<div id="map" class="map"></div>
 	<script src="sketch.js"></script>
 	<script src="Edge.js"></script>
