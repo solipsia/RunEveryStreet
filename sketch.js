@@ -51,6 +51,7 @@ var btnTLx, btnTLy, btnBRx, btnBRy; // button's top left and bottom right x and 
 var starttime;
 var efficiencyhistory = [];
 var totalefficiencygains = 0;
+var isTouchScreenDevice=false;
 
 function setup() {
 	if (navigator.geolocation) { //if browser shares user GPS location, update map to center on it.
@@ -76,6 +77,7 @@ function setup() {
 }
 
 function draw() { //main loop called by the P5.js framework every frame
+	if (touches.length>0) {isTouchScreenDevice=true;} // detect touch screen device such as mobile
 	clear();
 	drawMask(); //frame the active area on the map
 	if (mode != choosemapmode) {
@@ -258,7 +260,7 @@ function showStatus() {
 			text("Iterations/second: " + iterations / (millis() - starttime) * 1000, textx, texty + 140);
 			text("best routes: " + efficiencyhistory.length, textx, texty + 160);
 			text("efficiency gains: " + nf(100*totalefficiencygains, 0, 2) + "% and " + nf(100 * totalefficiencygains / (millis() - starttime) * 1000, 0, 2) + "% gains/sec:", textx, texty + 180);//
-			text("touches: " + touches.length, textx, texty + 200);
+			text("isTouchScreenDevice: " + isTouchScreenDevice, textx, texty + 200);
 		}
 	}
 }
