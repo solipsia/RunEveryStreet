@@ -326,6 +326,7 @@ function mousePressed() { // clicked on map to select a node
 		return;
 	}
 	if (mode == trimmode) {
+		showEdges(); // find closest edge
 		if (mouseY < btnBRy && mouseY > btnTLy && mouseX > btnTLx && mouseX < btnBRx) { // clicked on button
 			mode = solveRESmode;
 			showMessage('Calculating... Tap to stop');
