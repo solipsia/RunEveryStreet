@@ -8,7 +8,7 @@ class Route {
             this.maxlon = 0;
             this.waypoints.push(startnode);
             this.distance = 0;
-            this.doublingsup=0;
+            this.doublingsup = 0;
         } else { // make a deep copy of a route
             this.waypoints = [];
             for (let i = 0; i < originalroute.waypoints.length; i++) {
@@ -19,7 +19,7 @@ class Route {
             this.minlon = originalroute.minlon;
             this.maxlon = originalroute.maxlon;
             this.distance = originalroute.distance;
-            this.doublingsup=originalroute.doublingsup;
+            this.doublingsup = originalroute.doublingsup;
         }
     }
 
@@ -30,7 +30,7 @@ class Route {
         this.maxlat = max(this.maxlat, node.lat);
         this.minlon = min(this.minlon, node.lon);
         this.maxlon = max(this.maxlon, node.lon);
-        this.doublingsup+=doublingsup;
+        this.doublingsup += doublingsup;
     }
 
     area() { // rough approximation of the area
@@ -63,5 +63,47 @@ class Route {
         }
         fill(149, 255, 255, 0.8);
         ellipse(this.waypoints[bestroute.waypoints.length - 1].x, this.waypoints[bestroute.waypoints.length - 1].y, 20, 20); //show the last waypoint
+    }
+
+    exportGPX() {
+        let xmlDoc = document.implementation.createDocument(null, "gpx");
+        let node = xmlDoc.createElement("name");
+        node.appendChild(xmlDoc.createTextNode("Auto Router GPX"));
+        xmlDoc.documentElement.appendChild(node);
+        let x = xmlDoc.getElementsByTagName('gpx');
+        x[0].setAttribute("version", "1.0")
+        let trk = xmlDoc.createElement("trk");
+        let trkname = xmlDoc.createElement("name");
+        trkname.appendChild(xmlDoc.createTextNode("Auto Route"));
+        trk.appendChild(trkname);
+        let trknumber = xmlDoc.createElement("number");
+        trknumber.appendChild(xmlDoc.createTextNode("1"));
+        trk.appendChild(trknumber);
+        let trkseg = xmlDoc.createElement("trkseg");
+
+        for (let i = 0; i < this.waypoints.length; i++) {
+            let trkpt = xmlDoc.createElement("trkpt");
+            trkpt.setAttribute("lat", this.waypoints[i].lat);
+            trkpt.setAttribute("lon", this.waypoints[i].lon);
+            let ele = xmlDoc.createElement("ele");
+            ele.appendChild(xmlDoc.createTextNode("2000"));
+            trkpt.appendChild(ele);
+            let timenode = xmlDoc.createElement("time");
+            timenode.appendChild(xmlDoc.createTextNode("18:20"));
+            trkpt.appendChild(timenode);
+            trkseg.appendChild(trkpt);
+        }
+
+        trk.appendChild(trkseg);
+        xmlDoc.documentElement.appendChild(trk);
+
+
+        var serializer = new XMLSerializer();
+        var xmlString = serializer.serializeToString(xmlDoc);
+
+        console.log(xmlString);
+
+
+        //saveXML(xml, "route.xml");
     }
 }

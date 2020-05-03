@@ -49,9 +49,10 @@ var msgbckDiv, msgDiv;
 var margin;
 var btnTLx, btnTLy, btnBRx, btnBRy; // button's top left and bottom right x and y coordinates.
 var starttime;
-var efficiencyhistory = [];
+var efficiencyhistory = [],
+	distancehistory = [];
 var totalefficiencygains = 0;
-var isTouchScreenDevice=false;
+var isTouchScreenDevice = false;
 
 function setup() {
 	if (navigator.geolocation) { //if browser shares user GPS location, update map to center on it.
@@ -63,7 +64,7 @@ function setup() {
 	mapHeight = windowHeight;
 	windowX = windowWidth;
 	windowY = mapHeight //; + 250;
-	canvas = createCanvas(windowX, windowY-34);
+	canvas = createCanvas(windowX, windowY - 34);
 	colorMode(HSB);
 	mode = choosemapmode;
 	iterationsperframe = 1;
@@ -72,7 +73,9 @@ function setup() {
 }
 
 function draw() { //main loop called by the P5.js framework every frame
-	if (touches.length>0) {isTouchScreenDevice=true;} // detect touch screen device such as mobile
+	if (touches.length > 0) {
+		isTouchScreenDevice = true;
+	} // detect touch screen device such as mobile
 	clear();
 	drawMask(); //frame the active area on the map
 	if (mode != choosemapmode) {
@@ -80,7 +83,6 @@ function draw() { //main loop called by the P5.js framework every frame
 			showEdges(); //draw connections between nodes
 		}
 		if (mode == solveRESmode) {
-			drawProgressGraph();
 			iterationsperframe = max(0.01, iterationsperframe - 1 * (5 - frameRate())); // dynamically adapt iterations per frame to hit 5fps
 			for (let it = 0; it < iterationsperframe; it++) {
 				iterations++;
@@ -101,13 +103,14 @@ function draw() { //main loop called by the P5.js framework every frame
 						currentroute.distance += calcdistance(currentnode.lat, currentnode.lon, startnode.lat, startnode.lon);
 						if (currentroute.distance < bestdistance) { // this latest route is now record
 							bestroute = new Route(null, currentroute);
-							//bestroute.exportGPX();
+							bestroute.exportGPX();
 							bestdistance = currentroute.distance;
-							
+
 							if (efficiencyhistory.length > 1) {
-								totalefficiencygains += totaledgedistance / bestroute.distance - efficiencyhistory[efficiencyhistory.length-1];
+								totalefficiencygains += totaledgedistance / bestroute.distance - efficiencyhistory[efficiencyhistory.length - 1];
 							}
 							efficiencyhistory.push(totaledgedistance / bestroute.distance);
+							distancehistory.push(bestroute.distance);
 
 						}
 						currentnode = startnode;
@@ -148,7 +151,6 @@ function getOverpassData() { //load nodes and edge map data in XML format from O
 
 	overpassquery = overpassquery.replace("{{bbox}}", dataminlat + "," + dataminlon + "," + datamaxlat + "," + datamaxlon);
 	overpassquery = overpassquery.replace("{{bbox}}", dataminlat + "," + dataminlon + "," + datamaxlat + "," + datamaxlon);
-	console.log(mapminlat + "," + mapminlon + "," + mapmaxlat + "," + mapmaxlon);
 	OverpassURL = OverpassURL + encodeURI(overpassquery);
 	httpGet(OverpassURL, 'text', false, function (response) {
 		let OverpassResponse = response;
@@ -211,7 +213,7 @@ function showNodes() {
 	if (mode == selectnodemode) {
 		startnode = nodes[closestnodetomouse];
 	}
-	if (startnode != null) {
+	if (startnode != null && (!isTouchScreenDevice || mode != selectnodemode)) {
 		startnode.highlight();
 	}
 }
@@ -228,7 +230,7 @@ function showEdges() {
 			}
 		}
 	}
-	if (closestedgetomouse >= 0) {
+	if (closestedgetomouse >= 0 && !isTouchScreenDevice) {
 		edges[closestedgetomouse].highlight();
 	}
 
@@ -254,7 +256,7 @@ function showStatus() {
 			text("Solutions per frame: " + iterationsperframe, textx, texty + 120);
 			text("Iterations/second: " + iterations / (millis() - starttime) * 1000, textx, texty + 140);
 			text("best routes: " + efficiencyhistory.length, textx, texty + 160);
-			text("efficiency gains: " + nf(100*totalefficiencygains, 0, 2) + "% and " + nf(100 * totalefficiencygains / (millis() - starttime) * 1000, 0, 2) + "% gains/sec:", textx, texty + 180);//
+			text("efficiency gains: " + nf(100 * totalefficiencygains, 0, 2) + "% and " + nf(100 * totalefficiencygains / (millis() - starttime) * 1000, 0, 2) + "% gains/sec:", textx, texty + 180); //
 			text("isTouchScreenDevice: " + isTouchScreenDevice, textx, texty + 200);
 		}
 	}
@@ -378,7 +380,7 @@ function showMessage(msg) {
 		hideMessage();
 	}
 	let ypos = 20;
-	let btnwidth = 340;
+	let btnwidth = 320;
 	msgbckDiv = createDiv('');
 	msgbckDiv.style('position', 'fixed');
 	msgbckDiv.style('width', btnwidth + 'px');
@@ -401,7 +403,7 @@ function showMessage(msg) {
 	msgDiv.style('-webkit-transform', 'translate(-50%, -50%)');
 	msgDiv.style('transform', 'translate(-50%, -50%)');
 	msgDiv.style('font-family', '"Lucida Sans Unicode", "Lucida Grande", sans-serif');
-	msgDiv.style('font-size', '18px');
+	msgDiv.style('font-size', '16px');
 	msgDiv.style('text-align', 'center');
 	msgDiv.style('vertical-align', 'middle');
 	msgDiv.style('height', '50px');
@@ -426,7 +428,6 @@ function drawMask() {
 
 function trimSelectedEdge() {
 	if (closestedgetomouse >= 0) {
-		console.log('edges before trim', edges.length);
 		let edgetodelete = edges[closestedgetomouse];
 		edges.splice(edges.findIndex((element) => element == edgetodelete), 1);
 		for (let i = 0; i < nodes.length; i++) { // remove references to the deleted edge from within each of the nodes
@@ -439,25 +440,27 @@ function trimSelectedEdge() {
 	}
 }
 
+
+
 function drawProgressGraph() {
 	if (efficiencyhistory.length > 0) {
 		noStroke();
-		fill(0, 0, 0, 0.5);
+		fill(0, 0, 0, 0.3);
 		let graphHeight = 100;
 		rect(0, height - graphHeight, windowWidth, graphHeight);
-		fill(0, 5, 225,1);
+		fill(0, 5, 225, 255);
 		textAlign(LEFT);
 		textSize(12);
-		text("Efficiency Progress",0,height - graphHeight+18);
+		text("Routes tried: " + (iterations.toLocaleString()) + ", Length of all roads: " + nf(totaledgedistance, 0, 1) + "km, Best route: " + nf(bestroute.distance, 0, 1) + "km (" + round(efficiencyhistory[efficiencyhistory.length - 1] * 100) + "%)", 15, height - graphHeight + 18);
 		textAlign(CENTER);
 		textSize(12);
 		for (let i = 0; i < efficiencyhistory.length; i++) {
-			fill(i * 128 / efficiencyhistory.length, 255, 255, 0.5);
-			let startx=map(i, 0, efficiencyhistory.length, 0, windowWidth);
-			let starty=height - graphHeight * efficiencyhistory[i];
+			fill(i * 128 / efficiencyhistory.length, 255, 205, 1);
+			let startx = map(i, 0, efficiencyhistory.length, 0, windowWidth);
+			let starty = height - graphHeight * efficiencyhistory[i];
 			rect(startx, starty, windowWidth / efficiencyhistory.length, graphHeight * efficiencyhistory[i]);
-			fill(0, 5, 225);
-			text(nf(efficiencyhistory[i]*100,0,0)+"%",startx+windowWidth / efficiencyhistory.length/2, starty+graphHeight * efficiencyhistory[i]/2);
+			fill(0, 5, 0);
+			text(round(distancehistory[i]) + "km", startx + windowWidth / efficiencyhistory.length / 2, height - 5);
 		}
 	}
 }
