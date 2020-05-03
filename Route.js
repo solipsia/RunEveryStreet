@@ -67,19 +67,17 @@ class Route {
 
     exportGPX() {
         let xmlDoc = document.implementation.createDocument(null, "gpx");
-        let node = xmlDoc.createElement("name");
-        node.appendChild(xmlDoc.createTextNode("Auto Router GPX"));
-        xmlDoc.documentElement.appendChild(node);
         let x = xmlDoc.getElementsByTagName('gpx');
-        x[0].setAttribute("version", "1.0")
+        x[0].setAttribute("xmlns:gpxtpx", "http://www.garmin.com/xmlschemas/TrackPointExtension/v1");
+        x[0].setAttribute("version", "1.1");
+        x[0].setAttribute("xm1ns", "http://www.topografix.com/GPX/1/1"); // for some weird reason the XML DOM won't add an attribute called exactly 'xmlns', so I'm fudging it and replacing it later.
         let trk = xmlDoc.createElement("trk");
-        let trkname = xmlDoc.createElement("name");
-        trkname.appendChild(xmlDoc.createTextNode("Auto Route"));
-        trk.appendChild(trkname);
-        let trknumber = xmlDoc.createElement("number");
-        trknumber.appendChild(xmlDoc.createTextNode("1"));
+        let trknumber = xmlDoc.createElement("type");
+        trknumber.appendChild(xmlDoc.createTextNode("9"));
         trk.appendChild(trknumber);
         let trkseg = xmlDoc.createElement("trkseg");
+
+        let now = new Date();
 
         for (let i = 0; i < this.waypoints.length; i++) {
             let trkpt = xmlDoc.createElement("trkpt");
@@ -89,7 +87,8 @@ class Route {
             ele.appendChild(xmlDoc.createTextNode("2000"));
             trkpt.appendChild(ele);
             let timenode = xmlDoc.createElement("time");
-            timenode.appendChild(xmlDoc.createTextNode("18:20"));
+            let fakedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate()-1, now.getHours(), now.getMinutes() + i); // create a fake timestamp for the route by adding 1 min for each waypoint
+            timenode.appendChild(xmlDoc.createTextNode(fakedDate.toISOString()));
             trkpt.appendChild(timenode);
             trkseg.appendChild(trkpt);
         }
@@ -97,13 +96,11 @@ class Route {
         trk.appendChild(trkseg);
         xmlDoc.documentElement.appendChild(trk);
 
-
         var serializer = new XMLSerializer();
-        var xmlString = serializer.serializeToString(xmlDoc);
-
-        console.log(xmlString);
-
-
-        //saveXML(xml, "route.xml");
+        let XMLString = serializer.serializeToString(xmlDoc)
+        let XMLwriter = createWriter('route.gpx');
+        XMLString = XMLString.replace('xm1ns','xmlns'); // for some weird reason the XML DOM won't add an attribute called exactly 'xmlns', so I'm fudging it.
+        XMLwriter.write(XMLString);
+        XMLwriter.close();
     }
 }

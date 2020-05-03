@@ -103,9 +103,7 @@ function draw() { //main loop called by the P5.js framework every frame
 						currentroute.distance += calcdistance(currentnode.lat, currentnode.lon, startnode.lat, startnode.lon);
 						if (currentroute.distance < bestdistance) { // this latest route is now record
 							bestroute = new Route(null, currentroute);
-							bestroute.exportGPX();
 							bestdistance = currentroute.distance;
-
 							if (efficiencyhistory.length > 1) {
 								totalefficiencygains += totaledgedistance / bestroute.distance - efficiencyhistory[efficiencyhistory.length - 1];
 							}
@@ -344,6 +342,12 @@ function mousePressed() { // clicked on map to select a node
 		showMessage('Tap to download GPX route file');
 		return;
 	}
+	if (mode == downloadGPXmode && mouseY < btnBRy && mouseY > btnTLy && mouseX > btnTLx && mouseX < btnBRx) { //Busy solving and clicked on button
+		bestroute.exportGPX();
+		return;
+	}
+
+	
 }
 
 function positionMap(minlon_, minlat_, maxlon_, maxlat_) {
