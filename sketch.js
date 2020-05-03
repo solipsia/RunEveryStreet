@@ -405,7 +405,7 @@ function showMessage(msg) {
 	msgDiv.style('opacity', '1');
 	msgDiv.style('-webkit-transform', 'translate(-50%, -50%)');
 	msgDiv.style('transform', 'translate(-50%, -50%)');
-	msgDiv.style('font-family', 'Lucida Sans Unicode');
+	msgDiv.style('font-family', '"Lucida Sans Unicode", "Lucida Grande", sans-serif');
 	msgDiv.style('font-size', '20px');
 	msgDiv.style('text-align', 'center');
 	msgDiv.style('vertical-align', 'middle');
@@ -450,12 +450,11 @@ function drawProgressGraph() {
 		fill(0, 0, 0, 0.5);
 		let graphHeight = 100;
 		rect(0, height - graphHeight, windowWidth, graphHeight);
-		fill(0, 5, 225);
+		fill(0, 5, 225,1);
 		textAlign(LEFT);
 		textSize(12);
 		text("Efficiency Progress",0,height - graphHeight+18);
 		textAlign(CENTER);
-		noStroke();
 		textSize(12);
 		for (let i = 0; i < efficiencyhistory.length; i++) {
 			fill(i * 128 / efficiencyhistory.length, 255, 255, 0.5);
