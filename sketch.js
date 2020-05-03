@@ -130,7 +130,7 @@ function draw() { //main loop called by the P5.js framework every frame
 		if (mode == solveRESmode) {
 			drawProgressGraph();
 		}
-		showStatus();
+		//showStatus();
 	}
 }
 
