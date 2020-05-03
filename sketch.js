@@ -122,9 +122,11 @@ function draw() { //main loop called by the P5.js framework every frame
 			}
 		}
 		showNodes();
-
 		if (bestroute != null) {
 			bestroute.show();
+		}
+		if (mode == solveRESmode) {
+			drawProgressGraph();
 		}
 		showStatus();
 	}
@@ -448,7 +450,7 @@ function drawProgressGraph() {
 		rect(0, height - graphHeight, windowWidth, graphHeight);
 		fill(0, 5, 225);
 		textAlign(LEFT);
-		textSize(18);
+		textSize(12);
 		text("Efficiency Progress",0,height - graphHeight+18);
 		textAlign(CENTER);
 		noStroke();
