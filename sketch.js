@@ -398,7 +398,7 @@ function showMessage(msg) {
 	msgDiv = createDiv('');
 	msgDiv.style('position', 'fixed');
 	msgDiv.style('width', btnwidth + 'px');
-	msgDiv.style('top', ypos + 55 + 'px');
+	msgDiv.style('top', ypos + 57 + 'px');
 	msgDiv.style('left', '50%');
 	msgDiv.style('color', 'white');
 	msgDiv.style('background', 'none');
