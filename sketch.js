@@ -65,11 +65,8 @@ function setup() {
 	windowY = mapHeight //; + 250;
 	canvas = createCanvas(windowX, windowY-34);
 	colorMode(HSB);
-	// chk1 = createCheckbox('Show Steps', showSteps);
-	// chk1.position(300, mapHeight - 250);
-	// chk1.changed(function () {
-	// 	showSteps = !showSteps;
-	// });
+	// c
+	
 	mode = choosemapmode;
 	iterationsperframe = 1;
 	margin = 0.1; // don't pull data in the extreme edges of the map
@@ -383,7 +380,7 @@ function showMessage(msg) {
 		hideMessage();
 	}
 	let ypos = 20;
-	let btnwidth = 350;
+	let btnwidth = 340;
 	msgbckDiv = createDiv('');
 	msgbckDiv.style('position', 'fixed');
 	msgbckDiv.style('width', btnwidth + 'px');
