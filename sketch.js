@@ -449,7 +449,6 @@ function drawProgressGraph() {
 		noStroke();
 		fill(0, 0, 0, 0.5);
 		let graphHeight = 100;
-		stroke(255,0,255,1);
 		rect(0, height - graphHeight, windowWidth, graphHeight);
 		fill(0, 5, 225);
 		textAlign(LEFT);
