@@ -65,11 +65,11 @@ function setup() {
 	windowY = mapHeight //; + 250;
 	canvas = createCanvas(windowX, windowY-34);
 	colorMode(HSB);
-	chk1 = createCheckbox('Show Steps', showSteps);
-	chk1.position(300, mapHeight - 250);
-	chk1.changed(function () {
-		showSteps = !showSteps;
-	});
+	// chk1 = createCheckbox('Show Steps', showSteps);
+	// chk1.position(300, mapHeight - 250);
+	// chk1.changed(function () {
+	// 	showSteps = !showSteps;
+	// });
 	mode = choosemapmode;
 	iterationsperframe = 1;
 	margin = 0.1; // don't pull data in the extreme edges of the map
