@@ -383,7 +383,7 @@ function showMessage(msg) {
 		hideMessage();
 	}
 	let ypos = 20;
-	let btnwidth = 400;
+	let btnwidth = 350;
 	msgbckDiv = createDiv('');
 	msgbckDiv.style('position', 'fixed');
 	msgbckDiv.style('width', btnwidth + 'px');
@@ -406,7 +406,7 @@ function showMessage(msg) {
 	msgDiv.style('-webkit-transform', 'translate(-50%, -50%)');
 	msgDiv.style('transform', 'translate(-50%, -50%)');
 	msgDiv.style('font-family', '"Lucida Sans Unicode", "Lucida Grande", sans-serif');
-	msgDiv.style('font-size', '20px');
+	msgDiv.style('font-size', '18px');
 	msgDiv.style('text-align', 'center');
 	msgDiv.style('vertical-align', 'middle');
 	msgDiv.style('height', '50px');
