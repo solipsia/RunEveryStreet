@@ -45,7 +45,7 @@ var bestdoublingsup;
 var showSteps = false;
 var showRoads = true;
 var iterations, iterationsperframe;
-var msgbckDiv, msgDiv;
+var msgbckDiv, msgDiv, reportbckDiv,reportmsgDiv;
 var margin;
 var btnTLx, btnTLy, btnBRx, btnBRy; // button's top left and bottom right x and y coordinates.
 var starttime;
@@ -70,6 +70,7 @@ function setup() {
 	iterationsperframe = 1;
 	margin = 0.07; // don't pull data in the extreme edges of the map
 	showMessage("Zoom to selected area, then tap here");
+
 }
 
 function draw() { //main loop called by the P5.js framework every frame
@@ -78,6 +79,7 @@ function draw() { //main loop called by the P5.js framework every frame
 	} // detect touch screen device such as mobile
 	clear();
 	drawMask(); //frame the active area on the map
+
 	if (mode != choosemapmode) {
 		if (showRoads) {
 			showEdges(); //draw connections between nodes
@@ -125,6 +127,9 @@ function draw() { //main loop called by the P5.js framework every frame
 		}
 		if (mode == solveRESmode) {
 			drawProgressGraph();
+		}
+		if (mode == downloadGPXmode){
+			showReportOut();
 		}
 		//showStatus();
 	}
@@ -234,31 +239,7 @@ function showEdges() {
 
 }
 
-function showStatus() {
-	if (startnode != null) {
-		let textx = 2;
-		let texty = mapHeight - 400;
-		fill(0, 5, 225);
-		noStroke();
-		textSize(12);
-		textAlign(LEFT);
-		text("Total number nodes: " + nodes.length, textx, texty);
-		text("Total number road sections: " + edges.length, textx, texty + 20);
-		text("Length of roads: " + nf(totaledgedistance, 0, 3) + "km", textx, texty + 40);
-		if (bestroute != null) {
-			if (bestroute.waypoints.length > 0) {
-				text("Best route: " + nf(bestroute.distance, 0, 3) + "km, " + nf(100 * totaledgedistance / bestroute.distance, 0, 2) + "%", textx, texty + 60);
-			}
-			text("Routes tried: " + iterations, textx, texty + 80);
-			text("Frame rate: " + frameRate(), textx, texty + 100);
-			text("Solutions per frame: " + iterationsperframe, textx, texty + 120);
-			text("Iterations/second: " + iterations / (millis() - starttime) * 1000, textx, texty + 140);
-			text("best routes: " + efficiencyhistory.length, textx, texty + 160);
-			text("efficiency gains: " + nf(100 * totalefficiencygains, 0, 2) + "% and " + nf(100 * totalefficiencygains / (millis() - starttime) * 1000, 0, 2) + "% gains/sec:", textx, texty + 180); //
-			text("isTouchScreenDevice: " + isTouchScreenDevice, textx, texty + 200);
-		}
-	}
-}
+
 
 
 
@@ -337,12 +318,12 @@ function mousePressed() { // clicked on map to select a node
 			trimSelectedEdge();
 		}
 	}
-	if (mode == solveRESmode && mouseY < btnBRy && mouseY > btnTLy && mouseX > btnTLx && mouseX < btnBRx) { //Busy solving and clicked on button
+	if (mode == solveRESmode && mouseY < btnBRy && mouseY > btnTLy && mouseX > btnTLx && mouseX < btnBRx) { // Was busy solving and user clicked on button
 		mode = downloadGPXmode;
-		showMessage('Tap to download GPX route file');
+		hideMessage();
 		return;
 	}
-	if (mode == downloadGPXmode && mouseY < btnBRy && mouseY > btnTLy && mouseX > btnTLx && mouseX < btnBRx) { //Busy solving and clicked on button
+	if (mode == downloadGPXmode && mouseY < height/2+200+40 && mouseY > height/2+200 && mouseX > width/2-140 && mouseX < width/2-140+280) { // Clicked Download Route rect(width/2-140,height/2+200,280,40);
 		bestroute.exportGPX();
 		return;
 	}
@@ -444,8 +425,6 @@ function trimSelectedEdge() {
 	}
 }
 
-
-
 function drawProgressGraph() {
 	if (efficiencyhistory.length > 0) {
 		noStroke();
@@ -465,6 +444,68 @@ function drawProgressGraph() {
 			rect(startx, starty, windowWidth / efficiencyhistory.length, graphHeight * efficiencyhistory[i]);
 			fill(0, 5, 0);
 			text(round(distancehistory[i]) + "km", startx + windowWidth / efficiencyhistory.length / 2, height - 5);
+		}
+	}
+}
+
+function showReportOut() {
+
+	fill(250,255,0,0.6);
+	noStroke();
+	rect(width/2-150,height/2-250,300,500);
+	fill(250,255,0,0.15);
+	rect(width/2-147,height/2-247,300,500);
+	strokeWeight(1);
+	stroke(20,255,255,0.8);
+	line(width/2-150,height/2-200,width/2+150,height/2-200);
+	noStroke();
+	fill(0,0,255,1);
+	textSize(28);
+	textAlign(CENTER);
+	text('Route Summary',width/2,height/2-215);
+	fill(0,0,255,0.75);
+	textSize(16);
+	text('Total roads covered',width/2,height/2-170+0*95);
+	text('Total length of all roads',width/2,height/2-170+1*95);
+	text('Length of final route',width/2,height/2-170+2*95);
+	text('Efficiency',width/2,height/2-170+3*95);
+
+	textSize(36);
+	fill(20,255,255,1);
+	text(nf(totaledgedistance, 0, 1) + "km",width/2,height/2-120+0*95);
+	text(nf(totaledgedistance, 0, 1) + "km",width/2,height/2-120+1*95);
+	text(nf(bestroute.distance, 0, 1) + "km",width/2,height/2-120+2*95);
+	text(nf(100 * totaledgedistance / bestroute.distance, 0, 1) + "%",width/2,height/2-120+3*95);
+
+	fill(20,255,100,0.75);
+	rect(width/2-140,height/2+200,280,40);
+	fill(0,0,255,1);
+	textSize(28);
+	text('Download Route',width/2,height/2+230);
+}
+
+function showStatus() {
+	if (startnode != null) {
+		let textx = 2;
+		let texty = mapHeight - 400;
+		fill(0, 5, 225);
+		noStroke();
+		textSize(12);
+		textAlign(LEFT);
+		text("Total number nodes: " + nodes.length, textx, texty);
+		text("Total number road sections: " + edges.length, textx, texty + 20);
+		text("Length of roads: " + nf(totaledgedistance, 0, 3) + "km", textx, texty + 40);
+		if (bestroute != null) {
+			if (bestroute.waypoints.length > 0) {
+				text("Best route: " + nf(bestroute.distance, 0, 3) + "km, " + nf(100 * totaledgedistance / bestroute.distance, 0, 2) + "%", textx, texty + 60);
+			}
+			text("Routes tried: " + iterations, textx, texty + 80);
+			text("Frame rate: " + frameRate(), textx, texty + 100);
+			text("Solutions per frame: " + iterationsperframe, textx, texty + 120);
+			text("Iterations/second: " + iterations / (millis() - starttime) * 1000, textx, texty + 140);
+			text("best routes: " + efficiencyhistory.length, textx, texty + 160);
+			text("efficiency gains: " + nf(100 * totalefficiencygains, 0, 2) + "% and " + nf(100 * totalefficiencygains / (millis() - starttime) * 1000, 0, 2) + "% gains/sec:", textx, texty + 180); //
+			text("isTouchScreenDevice: " + isTouchScreenDevice, textx, texty + 200);
 		}
 	}
 }
