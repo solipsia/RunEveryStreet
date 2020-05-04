@@ -1,5 +1,6 @@
 class Edge { //section of road that connects nodes
-	constructor(from_, to_) {
+	constructor(from_, to_, wayid_) {
+		this.wayid = wayid_;
 		this.from = from_;
 		this.to = to_;
 		this.travels = 0;

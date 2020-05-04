@@ -53,6 +53,7 @@ var efficiencyhistory = [],
 	distancehistory = [];
 var totalefficiencygains = 0;
 var isTouchScreenDevice = false;
+var totaluniqueroads;
 
 function setup() {
 	if (navigator.geolocation) { //if browser shares user GPS location, update map to center on it.
@@ -139,6 +140,7 @@ function getOverpassData() { //load nodes and edge map data in XML format from O
 	showMessage("Loading map data...");
 	canvas.position(0, 34); // start canvas just below logo image
 	bestroute = null;
+	totaluniqueroads=0;
 	var extent = ol.proj.transformExtent(openlayersmap.getView().calculateExtent(openlayersmap.getSize()), 'EPSG:3857', 'EPSG:4326'); //get the coordinates current view on the map
 	mapminlat = extent[1];
 	mapminlon = extent[0];
@@ -188,7 +190,7 @@ function getOverpassData() { //load nodes and edge map data in XML format from O
 				fromnode = getNodebyId(nodesinsideway[j].getAttribute("ref"));
 				tonode = getNodebyId(nodesinsideway[j + 1].getAttribute("ref"));
 				if (fromnode != null & tonode != null) {
-					let newEdge = new Edge(fromnode, tonode);
+					let newEdge = new Edge(fromnode, tonode, wayid);
 					edges.push(newEdge);
 					totaledgedistance += newEdge.distance;
 				}
@@ -238,10 +240,6 @@ function showEdges() {
 	}
 
 }
-
-
-
-
 
 function resetEdges() {
 	for (let i = 0; i < edges.length; i++) {
@@ -321,6 +319,14 @@ function mousePressed() { // clicked on map to select a node
 	if (mode == solveRESmode && mouseY < btnBRy && mouseY > btnTLy && mouseX > btnTLx && mouseX < btnBRx) { // Was busy solving and user clicked on button
 		mode = downloadGPXmode;
 		hideMessage();
+		//calculate total unique roads (ways):
+		let uniqueways=[];
+		for (let i = 0; i < edges.length; i++) {
+			if (!uniqueways.includes(edges[i].wayid)) {
+				uniqueways.push(edges[i].wayid);
+			}
+		}
+		totaluniqueroads=uniqueways.length;
 		return;
 	}
 	if (mode == downloadGPXmode && mouseY < height/2+200+40 && mouseY > height/2+200 && mouseX > width/2-140 && mouseX < width/2-140+280) { // Clicked Download Route rect(width/2-140,height/2+200,280,40);
@@ -472,10 +478,10 @@ function showReportOut() {
 
 	textSize(36);
 	fill(20,255,255,1);
-	text(nf(totaledgedistance, 0, 1) + "km",width/2,height/2-120+0*95);
+	text(totaluniqueroads,width/2,height/2-120+0*95);
 	text(nf(totaledgedistance, 0, 1) + "km",width/2,height/2-120+1*95);
 	text(nf(bestroute.distance, 0, 1) + "km",width/2,height/2-120+2*95);
-	text(nf(100 * totaledgedistance / bestroute.distance, 0, 1) + "%",width/2,height/2-120+3*95);
+	text(round(100 * totaledgedistance / bestroute.distance) + "%",width/2,height/2-120+3*95);
 
 	fill(20,255,100,0.75);
 	rect(width/2-140,height/2+200,280,40);
