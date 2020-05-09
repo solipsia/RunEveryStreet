@@ -5,7 +5,7 @@ This is an attempt at solving the [Chinese Postman Problem](https://en.wikipedia
 
 The tool pulls map data from OpenStreetMap, converts it into a mathematical model (a Graph Database) of nodes and edges, then applies an algorithm that produces a route. The algorithm calculates a large number of routes stochastically and selects the best one. The final route can be downloaded as a GPX file to a Garmin or other GPS.
 
-## Process
+## How it works
 
 1. When the website is loaded, it loads the background map tileset from OpenStreetMap via the OpenLayers API
 2. The user zooms and pans to select the area to analyse
@@ -27,7 +27,4 @@ The tool pulls map data from OpenStreetMap, converts it into a mathematical mode
 </p>
 <p align="center">
   <img width="460" src="/docs/DownloadRoute.png"> 
-</p>
-<p align="center">
-  <img width="460" src="/docs/Calculating.png">
 </p>
