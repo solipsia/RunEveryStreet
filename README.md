@@ -6,7 +6,7 @@ This is an attempt at solving the [Chinese Postman Problem](https://en.wikipedia
   <img width="460" src="/docs/Square.png">
 </p>
 <p align="center">
-  <img width="460" src="/docs/DownloadRoute.png">
+  <img width="460" src="/docs/DownloadRoute.png"> 
 </p>
 <p align="center">
   <img width="460" src="/docs/Calculating.png">
