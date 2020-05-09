@@ -5,10 +5,10 @@ This is an attempt at solving the [Chinese Postman Problem](https://en.wikipedia
 
 The tool pulls map data from OpenStreetMap, converts it into a mathematical model (a Graph Database) of nodes and edges, then applies an algorithm that produces a route. The algorithm calculates a large number of routes stochastically and selects the best one. The final route can be downloaded as a GPX file to a Garmin or other GPS.
 
-## Design
-set
+## Process
 
-When the website is loaded
+1. When the website is loaded
+2. Two
 
 ## Algorithm
 test
