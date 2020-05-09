@@ -3,7 +3,7 @@ The live website can be accessed here: https://solipsia.github.io/RunEveryStreet
 
 This is an attempt at solving the [Chinese Postman Problem](https://en.wikipedia.org/wiki/Route_inspection_problem) by calculating the shortest route that covers all possible roads within a selected town at least once.
 
-The tool pulls map data from OpenStreetMap, converts it into a mathematical model (a Graph Database) of nodes and edges, then applies an algorithm to this data in order to produce a route. The algorithm calculates a large number of routes stochastically and selects the best one. Once completed, the route can be downloaded as a GPX file to a Garmin or other GPS.
+The tool pulls map data from OpenStreetMap, converts it into a mathematical model (a Graph Database) of nodes and edges, then applies an algorithm that produces a route. The algorithm calculates a large number of routes stochastically and selects the best one. The final route can be downloaded as a GPX file to a Garmin or other GPS.
 
 ## Design
 set
