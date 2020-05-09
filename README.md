@@ -7,8 +7,10 @@ This is an attempt at solving the [Chinese Postman Problem](https://en.wikipedia
 The tool works by pulling map data from OpenStreetMap, converts it into a mathematical model of a Graph Database where roads are edges and junctions are nodes. The user picks a starting point and marks out the area to scan and the algorithm stochastically calculates the best route. Once completed, the route can be downloaded as a GPX file to a Garmin or other GPS.
 </p>
 ## Design
-- When the website is loaded
 
+<p>
+When the website is loaded
+</p>
 ## Algorithm
 <p align="center">
   <img width="460" src="/docs/Square.png">
