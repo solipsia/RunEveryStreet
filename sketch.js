@@ -70,7 +70,7 @@ function setup() {
 	mode = choosemapmode;
 	iterationsperframe = 1;
 	margin = 0.07; // don't pull data in the extreme edges of the map
-	showMessage("Zoom to selected area, then tap here");
+	showMessage("Zoom to selected area, then click here");
 
 }
 
@@ -300,7 +300,7 @@ function mousePressed() { // clicked on map to select a node
 	if (mode == selectnodemode && mouseY < mapHeight) { // Select node mode, and clicked on map 
 		showNodes(); //find node closest to mouse
 		mode = trimmode;
-		showMessage('Tap on roads to trim, then tap here');
+		showMessage('Tap on roads to trim, then click here');
 		removeOrphans(); // deletes parts of the network that cannot be reached from start
 		return;
 	}
@@ -308,7 +308,7 @@ function mousePressed() { // clicked on map to select a node
 		showEdges(); // find closest edge
 		if (mouseY < btnBRy && mouseY > btnTLy && mouseX > btnTLx && mouseX < btnBRx) { // clicked on button
 			mode = solveRESmode;
-			showMessage('Calculating... Tap to stop');
+			showMessage('Calculating... Click to stop');
 			showNodes(); // recalculate closest node
 			solveRES();
 			return;
