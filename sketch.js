@@ -197,7 +197,7 @@ function getOverpassData() { //load nodes and edge map data in XML format from O
 			}
 		}
 		mode = selectnodemode;
-		showMessage("Tap on start of route");
+		showMessage("Click on start of route");
 	});
 }
 
@@ -300,7 +300,7 @@ function mousePressed() { // clicked on map to select a node
 	if (mode == selectnodemode && mouseY < mapHeight) { // Select node mode, and clicked on map 
 		showNodes(); //find node closest to mouse
 		mode = trimmode;
-		showMessage('Tap on roads to trim, then click here');
+		showMessage('Click on roads to trim, then click here');
 		removeOrphans(); // deletes parts of the network that cannot be reached from start
 		return;
 	}
